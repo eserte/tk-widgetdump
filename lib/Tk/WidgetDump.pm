@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.25 2002/02/04 21:58:03 eserte Exp $
+# $Id: WidgetDump.pm,v 1.26 2002/02/25 21:39:22 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999-2002 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.25 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.26 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -378,7 +378,7 @@ sub WidgetInfo {
     $insert_method->("depth", "    depth");
 
     my $b = $txt->Button(-text => "Method call",
-			 -command => sub { 
+			 -command => sub {
 			     $wd->method_call($w);
 			 });
     $txt->windowCreate("end",
@@ -396,8 +396,10 @@ sub WidgetInfo {
     }
 
     my $ObjScanner;
-    if (!eval {	require Tk::ObjEditor;
+    if (!eval {
+		require Tk::ObjEditor;
 		$ObjScanner = "ObjEditor";
+		$Storable::forgive_me = 1; # XXX hack to prevent problems with code refs
 		1;
 	    }) {
 	eval { require Tk::ObjScanner;
