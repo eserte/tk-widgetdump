@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.10 2000/08/29 00:50:13 eserte Exp $
+# $Id: WidgetDump.pm,v 1.11 2000/08/29 17:28:45 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999, 2000 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.10 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.11 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -373,12 +373,14 @@ sub _label_title {
     my $w = shift;
     if (defined $w->cget(-image) and 
 	$w->cget(-image) ne "") {
-	my $i = $w->cget(-image);
-	if ($i->cget(-file) ne "") {
-	    _crop(basename($i->cget(-file))) . " (image)";
-	} else {
-	    "(image)";
-	}
+	my $image = "(image)";
+	eval {
+	    my $i = $w->cget(-image);
+	    if ($i->cget(-file) ne "") {
+		_crop(basename($i->cget(-file))) . " (image)";
+	    }
+	};
+	$image;
     } elsif (defined $w->cget(-textvariable) and
 	     $w->cget(-textvariable) ne "") {
 	_crop($ { $w->cget(-textvariable) });
