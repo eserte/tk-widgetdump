@@ -14,6 +14,11 @@ $loaded = 1;
 print "ok 1\n";
 
 $top = new MainWindow;
+
+foreach my $w (qw(Label Entry Button Listbox Canvas)) {
+    $top->$w()->pack;
+}
+
 #$top->WidgetDump;
 eval { $top->WidgetDump; };
 if ($@) {
