@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.6 2000/08/09 07:06:43 eserte Exp $
+# $Id: WidgetDump.pm,v 1.7 2000/08/24 20:40:01 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999 Slaven Rezic. All rights reserved.
@@ -127,7 +127,9 @@ sub _WD_Size {
     my $size = 0;
     eval {
 	while(my($k,$v) = each %$w) {
-	    $size += length($k) + length($v);
+	    if (defined $v) {
+		$size += length($k) + length($v);
+	    }
 	}
     };
     warn $@ if $@;
@@ -238,13 +240,23 @@ sub _insert_wd {
     my $i = 0;
     foreach my $cw ($top->children) {
 	my $path = (defined $par ? $par . $hl->cget(-separator) : '') . $i;
-	$hl->add($path, -text => $cw->Name, -data => $cw);
-	$hl->itemCreate($path, 1, -text => $cw->Class);
+	my($name, $class, $size, $ref);
+	eval {
+	    $name  = $cw->Name  || "No name";
+	    $class = $cw->Class || "No class";
+	    $size  = $cw->_WD_Size;
+	    $ref   = ref($cw)   || "No ref";
+	};
+	warn $@ if $@;
+	$hl->add($path, -text => $name, -data => $cw);
+	$hl->itemCreate($path, 1, -text => $class);
 	if ($cw->can('_WD_Characteristics')) {
-	    $hl->itemCreate($path, 2, -text => $cw->_WD_Characteristics);
+	    my $char = $cw->_WD_Characteristics;
+	    if (!defined $char) { $char = "???" }
+	    $hl->itemCreate($path, 2, -text => $char);
 	}
-	$hl->itemCreate($path, 3, -text => ref($cw));
-	$hl->itemCreate($path, 4, -text => $cw->_WD_Size);
+	$hl->itemCreate($path, 3, -text => $ref);
+	$hl->itemCreate($path, 4, -text => $size);
 	_insert_wd($hl, $cw, $path);
 	#if ($cw->can('_WD_Children')) {
 	#    $cw->_WD_Children;
@@ -408,6 +420,7 @@ package # hide from CPAN indexer
   Tk::Menu;
 sub _WD_Characteristics {
     my $w = shift;
+    
     Tk::WidgetDump::_crop($w->cget(-title)) . " (" . $w->cget("-type") . ")";
 }
 
@@ -431,16 +444,24 @@ package # hide from CPAN indexer
   Tk::Listbox;
 sub _WD_Characteristics {
     my $w = shift;
-    Tk::WidgetDump::_crop($w->get(0)) . " ...";
+    my $first_elem = $w->get(0);
+    if (defined $first_elem) {
+        Tk::WidgetDump::_crop($first_elem) . " ...";
+    } else {
+	"";
+    }
 }
 
 package # hide from CPAN indexer
   Tk::HList;
 sub _WD_Characteristics {
     my $w = shift;
+    my $res = "";
     eval {
-	Tk::WidgetDump::_crop($w->itemCget(0, 0, -text)) . " ...";
+	my($first_entry) = $w->info("children");
+	$res = Tk::WidgetDump::_crop($w->itemCget($first_entry, 0, -text)) . " ...";
     };
+    $res;
 }
 
 # XXX bei Refresh openlist merken und wiederherstellen
