@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.1 1999/07/23 03:10:40 eserte Exp $
+# $Id: WidgetDump.pm,v 1.2 1999/08/06 08:00:39 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999 Slaven Rezic. All rights reserved.
@@ -30,16 +30,18 @@ sub WidgetDump {
     $t->title("WidgetDump of $top");
     my $hl;
     $hl = $t->Scrolled('Tree', -drawbranch => 1, -header => 1,
-		       -columns => 4,
+		       -columns => 5,
 		       -scrollbars => "osoe",
 		       -command => sub {
 			   $hl->info('data', $_[0])->_WD_Flash;
 		       },
 		      )->pack(-fill => 'both', -expand => 1);
+    $hl->focus;
     $hl->headerCreate(0, -text => "Tk Name");
-    $hl->headerCreate(1, -text => "Characteristics");
-    $hl->headerCreate(2, -text => "Class");
-    $hl->headerCreate(3, -text => "Size");
+    $hl->headerCreate(1, -text => "Tk Class");
+    $hl->headerCreate(2, -text => "Characteristics");
+    $hl->headerCreate(3, -text => "Perl-Class");
+    $hl->headerCreate(4, -text => "Size");
     Tk::WidgetDump::_insert_wd($hl, $top);
     if (exists $args{-openinfo}) {
 #XXX needs work
@@ -111,11 +113,12 @@ sub _insert_wd {
     foreach my $cw ($top->children) {
 	my $path = (defined $par ? $par . $hl->cget(-separator) : '') . $i;
 	$hl->add($path, -text => $cw->Name, -data => $cw);
+	$hl->itemCreate($path, 1, -text => $cw->Class);
 	if ($cw->can('_WD_Characteristics')) {
-	    $hl->itemCreate($path, 1, -text => $cw->_WD_Characteristics);
+	    $hl->itemCreate($path, 2, -text => $cw->_WD_Characteristics);
 	}
-	$hl->itemCreate($path, 2, -text => ref($cw));
-	$hl->itemCreate($path, 3, -text => $cw->_WD_Size);
+	$hl->itemCreate($path, 3, -text => ref($cw));
+	$hl->itemCreate($path, 4, -text => $cw->_WD_Size);
 	_insert_wd($hl, $cw, $path);
 	#if ($cw->can('_WD_Children')) {
 	#    $cw->_WD_Children;
@@ -126,14 +129,16 @@ sub _insert_wd {
 
 sub _label_title {
     my $w = shift;
-    if ($w->cget(-image) ne "") {
+    if (defined $w->cget(-image) and 
+	$w->cget(-image) ne "") {
 	my $i = $w->cget(-image);
 	if ($i->cget(-file) ne "") {
 	    _crop(basename($i->cget(-file))) . " (image)";
 	} else {
 	    "(image)";
 	}
-    } elsif ($w->cget(-textvariable) ne "") {
+    } elsif (defined $w->cget(-textvariable) and
+	     $w->cget(-textvariable) ne "") {
 	_crop($ { $w->cget(-textvariable) });
     } else {
 	_crop($w->cget(-text));
@@ -142,7 +147,7 @@ sub _label_title {
 
 sub _crop {
     my $txt = shift;
-    if (length($txt) > 30) {
+    if (defined $txt && length($txt) > 30) {
 	substr($txt, 0, 30) . "...";
     } else {
 	$txt;
