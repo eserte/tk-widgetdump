@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.9 2000/08/25 02:23:36 eserte Exp $
+# $Id: WidgetDump.pm,v 1.10 2000/08/29 00:50:13 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999, 2000 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.10 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -262,6 +262,15 @@ sub WidgetInfo {
     $insert_method->("cells", "    cells");
     $insert_method->("colormapfull", "    full");
     $insert_method->("depth", "    depth");
+
+    my $b = $txt->Button(-text => "Method call",
+			 -command => sub { 
+			     $wd->_method_call($w);
+			 });
+    $txt->windowCreate("end",
+		       -window => $b,
+		       );
+
 }
 
 sub _show_widget {
@@ -300,6 +309,29 @@ warn $@ if $@;
     }
     $e->focus if Tk::Exists($e);
     $t->bind("<Escape>" => [$t, 'destroy']);
+}
+
+sub _method_call {
+    my($wd, $w) = @_;
+
+    my $t = $wd->Toplevel(-title => "Method call");
+    my $eval;
+    $t->Label(-text => "... on $w")->pack(-side => "left");
+    my $e = $t->_hist_entry({-textvariable => \$eval},
+			    {-match => 1, -dup => 0})->pack(-side => "left");
+    $e->focus;
+    my $ww = $w;
+    $e->bind("<Return>" => sub {
+	if ($e->can('historyAdd')) {
+	    $e->historyAdd;
+	}
+	$ww = $ww; # XXX ???????
+	my $cmd = '$ww->' . $eval;
+	my $res = eval($cmd);
+	require Data::Dumper;
+	print Data::Dumper->Dumpxs([$res, $@],[$cmd, 'Error']);
+	print "ref \$res = <$res>\n";
+    });
 }
 
 sub _insert_wd {
@@ -439,9 +471,13 @@ sub _get_widget_info_window {
     });
 
     $wi->Advertise("Information" => $txt);
-    $wi->Component(Button => "Close",
-		   -text => "Close",
-		   -command => sub { $wi->destroy })->pack;
+
+    my $f = $wi->Frame->pack;
+
+    my $cb = $f->Button(-text => "Close",
+			-command => sub { $wi->destroy }
+			)->pack(-side => "left");
+    $wi->Advertise(Close => $cb);
 
     $wi;
 }
@@ -478,6 +514,31 @@ sub _lsearch {
 # #	    
 #     }
 # }
+
+# REPO BEGIN
+# REPO NAME _hist_entry /home/e/eserte/src/repository 
+# REPO MD5 904022626019f774e4c0039cd8eecf78
+=head2 _hist_entry({ entry args }, { histentry args})
+
+    $top->_hist_entry(...);
+
+Create a HistEntry widget, if possible, otherwise an Entry widget.
+
+=cut
+
+sub Tk::Widget::_hist_entry {
+    my($top, $entry_args, $hist_entry_args) = @_;
+    my $Entry = "Entry";
+    my @extra_args;
+    eval {
+	require Tk::HistEntry;
+        Tk::HistEntry->VERSION(0.33);
+	$Entry = "SimpleHistEntry";
+	@extra_args = %$hist_entry_args;
+    };
+    $top->$Entry(%$entry_args);
+}
+# REPO END
 
 package # hide from CPAN indexer
   Tk::Toplevel;
@@ -555,8 +616,14 @@ sub _WD_Characteristics {
 package Tk::WidgetDump::Entry;
 sub entry {
     my($class, $p, $valref, $set_sub) = @_;
-    my $e = $p->Entry(-textvariable => $valref);
-    $e->bind("<Return>" => $set_sub);
+    my $e = $p->_hist_entry({-textvariable => $valref},
+			    {-match => 1, -dup => 0});
+    $e->bind("<Return>" => sub {
+	if ($e->can('historyAdd')) {
+	    $e->historyAdd;
+	}
+	$set_sub->();
+    });
     $e->pack(-side => "left");
 }
 
