@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.26 2002/02/25 21:39:22 eserte Exp $
+# $Id: WidgetDump.pm,v 1.27 2002/07/27 20:48:27 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999-2002 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.26 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.27 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -312,6 +312,23 @@ sub WidgetInfo {
 	my $c_count=0;
 	foreach my $sw (@children) {
 	    $txt->insert("end", $tab . $sw,
+			 ["widgetlink", "href-" . $sw],
+			 "\n");
+	    $Tk::WidgetDump::ref2widget{$sw} = $sw;
+	    $tab = "\t";
+	    if ($c_count > 10) {
+		$txt->insert("end", $tab . "...");
+	    }
+	}
+    }
+    my @subwidgets = keys %{ $w->{SubWidget} };
+    if (@subwidgets) {
+	$txt->insert("end", "Subwidgets:");
+	my $tab = "\t";
+	my $c_count=0;
+	foreach my $sw_name (@subwidgets) {
+	    my $sw = $w->Subwidget($sw_name);
+	    $txt->insert("end", $tab . $sw_name . " => " . $sw,
 			 ["widgetlink", "href-" . $sw],
 			 "\n");
 	    $Tk::WidgetDump::ref2widget{$sw} = $sw;
@@ -1322,7 +1339,7 @@ itself.
 
 =head1 AUTHOR
 
-Slaven Rezic (eserte@onlineoffice.de)
+Slaven Rezic (slaven.rezic@berlin.de)
 
 =head1 SEE ALSO
 
