@@ -1,0 +1,31 @@
+NAME
+       Tk::WidgetDump - dump the widget hierarchie
+
+SYNOPSIS
+           use Tk::WidgetDump;
+           $mw = new MainWindow;
+           $mw->WidgetDump;
+
+DESCRIPTION
+       Tk::WidgetDump helps in debugging Perl/Tk applications. By
+       calling the WidgetDump method, a new toplevel with the
+       widget hierarchie will be displayed. The hierarchie can
+       always be refreshed by the Refresh button (e.g. if new
+       widgets are added after calling the WidgetDump method).
+
+       By double-clicking on a widget entry, the widget flashes a
+       new toplevel is opened containing the configuration
+       options of the widget.  It also displays other
+       characteristics of the widget like children and parent
+       widgets, size, position and server parameters.
+       Configuration values can also be changed on the fly. For more
+       possible actions, see the man page or try it yourself.
+
+INSTALLATION
+
+       perl Makefile.PL
+       make
+       make install
+
+
+Slaven Rezic <eserte@onlineoffice.de>
