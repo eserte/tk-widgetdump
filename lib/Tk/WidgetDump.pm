@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.17 2000/10/02 21:36:44 eserte Exp $
+# $Id: WidgetDump.pm,v 1.18 2000/10/07 01:22:42 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999, 2000 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.17 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.18 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -336,6 +336,24 @@ sub WidgetInfo {
 			   -window => $b,
 			  );
     }
+
+    eval {
+	require Tk::ObjScanner;
+	my $b = $txt->Button
+	    (-text => "ObjScanner",
+	     -command => sub {
+		 my $t = $b->Toplevel(-title => "ObjScanner");
+		 my $os = $t->ObjScanner
+		     (caller => $w,
+		      title  => 'ObjScanner $w',
+		      background       => 'white',
+		      selectbackground => 'beige',
+		      foldImage => $t->Photo(-file => Tk->findINC('folder.xpm')),
+		      openImage => $t->Photo(-file => Tk->findINC('openfolder.xpm')),
+		      itemImage => $t->Photo(-file => Tk->findINC('textfile.xpm')))->pack;
+	     });
+	$txt->windowCreate("end", -window => $b);
+    };
 
 }
 
