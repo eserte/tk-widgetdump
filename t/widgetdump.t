@@ -10,27 +10,39 @@ BEGIN { $| = 1; $^W = 1; print "1..2\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use Tk;
 use Tk::WidgetDump;
+
+$ENV{BATCH} = 1 if !defined $ENV{BATCH};
+
 $loaded = 1;
 print "ok 1\n";
 
 $top = new MainWindow;
 
+$top->gridRowconfigure($_, -weight => 1) for (0..4);
+$top->gridColumnconfigure($_, -weight => 1) for (0..1);
+
+my $row = 0;
 foreach my $w (qw(Label Entry Button Listbox Canvas)) {
-    $top->$w()->pack;
+    $top->Label(-text => $w . ": ")->grid(-row => $row, -column => 0, -sticky => "nw");
+    $w{$w} = $top->$w()->grid(-row => $row, -column => 1, -sticky => "eswn");
+    $row++;
 }
+
+$w{Canvas}->createLine(0,0,100,100);
+$w{Canvas}->createText(20,20,-text =>42);
 
 # code references are evil:
 $top->{EvilCode} = sub { print "test " };
 
-#$top->WidgetDump;
+$top->update;
 eval { $top->WidgetDump; };
 if ($@) {
     print "not ";
 }
 print "ok 2\n";
 
-$top->after(60*1000, sub { $top->destroy });
-MainLoop unless $ENV{BATCH};
+$top->after(1*1000, sub { $top->destroy }) if $ENV{BATCH};
+MainLoop;
 
 ######################### End of black magic.
 
