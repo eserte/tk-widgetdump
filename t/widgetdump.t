@@ -20,6 +20,9 @@ if ($@) {
 }
 print "ok 2\n";
 
+$top->after(60*1000, sub { $top->destroy });
+MainLoop unless $ENV{BATCH};
+
 ######################### End of black magic.
 
 # Insert your test code below (better if it prints "ok 13"
