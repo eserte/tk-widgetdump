@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.22 2001/04/07 22:11:17 eserte Exp $
+# $Id: WidgetDump.pm,v 1.23 2001/04/07 22:48:13 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999-2001 Slaven Rezic. All rights reserved.
@@ -17,12 +17,13 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.22 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.23 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
 use Tk;
 use Tk::Tree;
+use Tk::Balloon;
 
 sub WidgetDump {
     my($top, %args) = @_;
@@ -102,7 +103,28 @@ sub WidgetDump {
     $t->bind("<Alt-r>"  => sub { $rb->invoke });
     $t->bind("<Escape>" => sub { $cb->invoke });
 
-    $top->bind("<1>" => [ $t, 'SelectWidget', Ev('X'), Ev('Y') ]);
+## NYI:
+#      $t->{TrackWidgets} = 1;
+#      my $balloon;
+#      my $pathname;
+#      $balloon = $top->Balloon
+#  	(-balloonposition => 'mouse',
+#  	 -motioncommand => sub {
+#  	     return unless $t->{TrackWidgets};
+#  	     my $ev = $top->XEvent;
+#  	     my($w_under) = $top->containing($ev->X, $ev->Y);
+#  	     $pathname = $w_under->PathName;
+#  	     1;
+#  	 });
+#      $balloon->attach($top, -msg => \$pathname);
+#      $bf->Checkbutton(-text => "Track",
+#  		     -variable => \$t->{TrackWidgets},
+#  		    )->pack(-side => 'left');
+
+    $top->bind("<1>" => [ sub { return unless $t && Tk::Exists($t);
+				shift;
+				$t->SelectWidget(@_);
+			    }, Ev('X'), Ev('Y') ]);
 
     if ($hl->can("menu") and $hl->can("PostPopupMenu")) {
 	my $popup_menu = $hl->Menu
@@ -218,6 +240,7 @@ sub SelectWidget {
     while (defined $c and $c ne "") {
 	if ($w eq $hl->info('data', $c)) {
 	    $hl->see($c);
+	    $hl->anchorSet($c);
 	    last;
 	}
 	$c = $hl->info("next", $c);
