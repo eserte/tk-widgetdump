@@ -1,5 +1,8 @@
 Revision history for Perl extension WidgetDump.
 
+1.28
+	- show binding details
+
 1.27
 	- show Subwidgets
 
