@@ -2,10 +2,10 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.7 2000/08/24 20:40:01 eserte Exp $
+# $Id: WidgetDump.pm,v 1.8 2000/08/24 23:40:15 eserte Exp $
 # Author: Slaven Rezic
 #
-# Copyright (C) 1999 Slaven Rezic. All rights reserved.
+# Copyright (C) 1999, 2000 Slaven Rezic. All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 #
@@ -13,8 +13,15 @@
 # WWW:  http://user.cs.tu-berlin.de/~eserte/
 #
 
+package Tk::WidgetDump;
+use vars qw($VERSION);
+use strict;
+
+$VERSION = sprintf("%d.%02d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/);
+
 package # hide from CPAN indexer
   Tk::Widget;
+use Tk;
 use Tk::Tree;
 
 sub WidgetDump {
@@ -32,6 +39,8 @@ sub WidgetDump {
 	$t->bind("<$key>" => sub { $t->destroy });
     }
 
+    bless $t, 'Tk::WidgetDump';
+
     my $hl;
     $hl = $t->Scrolled('Tree', -drawbranch => 1, -header => 1,
 		       -columns => 5,
@@ -41,7 +50,7 @@ sub WidgetDump {
 		       -takefocus => 1,
 		       -command => sub {
 			   my $sw = $hl->info('data', $_[0]);
-			   Tk::WidgetDump::_show_widget($t, $sw);
+			   $t->_show_widget($sw);
 		       },
 		      )->pack(-fill => 'both', -expand => 1);
     $hl->focus;
@@ -50,7 +59,7 @@ sub WidgetDump {
     $hl->headerCreate(2, -text => "Characteristics");
     $hl->headerCreate(3, -text => "Perl-Class");
     $hl->headerCreate(4, -text => "Size");
-    Tk::WidgetDump::_insert_wd($hl, $top);
+    $t->_insert_wd($hl, $top);
     if (exists $args{-openinfo}) {
 #XXX needs work
 #	while(my($k,$v) = each %{ $args{-openinfo} }) {
@@ -80,9 +89,32 @@ sub WidgetDump {
     $t->bind("<Escape>" => sub { $cb->invoke });
 }
 
-sub _WD_Flash {
+sub _WD_Size {
     my $w = shift;
+    my $size = 0;
+    eval {
+	while(my($k,$v) = each %$w) {
+	    if (defined $v) {
+		$size += length($k) + length($v);
+	    }
+	}
+    };
+    warn $@ if $@;
+    $size;
+}
+
+######################################################################
+
+package Tk::WidgetDump;
+use base qw(Tk::Toplevel);
+
+use File::Basename;
+
+use vars qw(%ref2widget);
+
+sub Flash {
     my $wd = shift;
+    my $w = shift;
     eval {
 	# Wenn ein Widget während eines Flashs nochmal ausgewählt wird,
 	# muss es erst einmal zurückgesetzt werden.
@@ -122,25 +154,11 @@ sub _WD_Flash {
     warn $@ if $@;
 }
 
-sub _WD_Size {
-    my $w = shift;
-    my $size = 0;
-    eval {
-	while(my($k,$v) = each %$w) {
-	    if (defined $v) {
-		$size += length($k) + length($v);
-	    }
-	}
-    };
-    warn $@ if $@;
-    $size;
-}
-
-sub _WD_WidgetInfo {
-    my $w = shift;
+sub WidgetInfo {
     my $wd = shift;
+    my $w = shift;
 
-    my $wi = Tk::WidgetDump::_get_widget_info_window($wd);
+    my $wi = $wd->_get_widget_info_window;
     $wi->title("Widget Info for " . $w);
 
     my $txt = $wi->Subwidget("Information");
@@ -149,8 +167,9 @@ sub _WD_WidgetInfo {
     $txt->insert("end", "Configuration:\n\n");
     foreach my $c ($w->configure) {
 	$txt->insert("end",
-		     join("\t", map { !defined $_ ? "<undef>" : $_ } @$c)
-		     . "\n");
+		     join("\t", map { !defined $_ ? "<undef>" : $_ } @$c),
+		     ["widgetlink", "config-" . $w . $c->[0] . "-" . $c->[2]],
+		     "\n");
     }
     $txt->insert("end", "\n");
 
@@ -163,6 +182,8 @@ sub _WD_WidgetInfo {
     $insert_method->("name", "Name");
     $insert_method->("PathName");
     $insert_method->("Class");
+
+    $Tk::WidgetDump::ref2widget{$w} = $w;
 
     if (defined $w->parent) {
 	$txt->insert("end", "Parent:\t" . $w->parent,
@@ -182,6 +203,23 @@ sub _WD_WidgetInfo {
 		     ["widgetlink", "href-" . $w->MainWindow],
 		     "\n");
 	$Tk::WidgetDump::ref2widget{$w->MainWindow} = $w->MainWindow;
+    }
+
+    my @children = $w->children;
+    if (@children) {
+	$txt->insert("end", "Children:");
+	my $tab = "\t";
+	my $c_count=0;
+	foreach my $sw (@children) {
+	    $txt->insert("end", $tab . $sw,
+			 ["widgetlink", "href-" . $sw],
+			 "\n");
+	    $Tk::WidgetDump::ref2widget{$sw} = $sw;
+	    $tab = "\t";
+	    if ($c_count > 10) {
+		$txt->insert("end", $tab . "...");
+	    }
+	}
     }
 
     $insert_method->("manager", "GeomManager");
@@ -219,24 +257,53 @@ sub _WD_WidgetInfo {
     $insert_method->("screenmmwidth", "    width (mm)");
     $insert_method->("screenmmheight", "    height (mm)");
     $insert_method->("screenvisual", "    visual");
-    
+
     $txt->insert("end", "\nColor map:\n");
     $insert_method->("cells", "    cells");
     $insert_method->("colormapfull", "    full");
     $insert_method->("depth", "    depth");
 }
 
-package Tk::WidgetDump;
-use File::Basename;
-
 sub _show_widget {
     my($wd, $w) = @_;
-    $w->_WD_Flash($wd);
-    $w->_WD_WidgetInfo($wd);
+    $wd->Flash($w);
+    $wd->WidgetInfo($w);
+}
+
+sub _edit_config {
+    my($wd, $w, $opt, $class) = @_;
+
+    my $val;
+    eval {
+	$val = $w->cget($opt);
+    };
+    if ($@) {
+	warn $@;
+	return;
+    }
+    my $oldval = $val;
+
+    my $t = $wd->Toplevel(-title => "Edit config");
+    my $set_sub = sub {
+	eval {
+	    $w->configure($opt => $val);
+	};
+	warn $@ if $@;
+    };
+    $t->Label(-text => "Edit $opt for $w:")->pack(-side => "left");
+    my $e;
+    $e = eval 'Tk::WidgetDump::' . $class . '->entry($t, \$val, $set_sub)';
+    #warn $@ if $@;
+    if ($@) {
+	$e = eval 'Tk::WidgetDump::Standard->entry($t, \$val, $set_sub)';
+	warn $@ if $@;
+    }
+    $e->focus if Tk::Exists($e);
+    $t->bind("<Escape>" => [$t, 'destroy']);
 }
 
 sub _insert_wd {
-    my($hl, $top, $par) = @_;
+    my($wd, $hl, $top, $par) = @_;
     my $i = 0;
     foreach my $cw ($top->children) {
 	my $path = (defined $par ? $par . $hl->cget(-separator) : '') . $i;
@@ -257,7 +324,7 @@ sub _insert_wd {
 	}
 	$hl->itemCreate($path, 3, -text => $ref);
 	$hl->itemCreate($path, 4, -text => $size);
-	_insert_wd($hl, $cw, $path);
+	$wd->_insert_wd($hl, $cw, $path);
 	#if ($cw->can('_WD_Children')) {
 	#    $cw->_WD_Children;
 	#}
@@ -322,11 +389,28 @@ sub _get_widget_info_window {
 
 	my $index = $text->index('current');
 	my @tags = $txt->tagNames($index);
+
 	my $i = _lsearch('href\-.*', @tags);
-	return if $i < 0;
-	my($href) = $tags[$i] =~ /href-(.*)/;
-	my $widget = $ref2widget{$href};
-	_show_widget($wd, $widget);
+	if ($i >= 0) {
+	    my($href) = $tags[$i] =~ /href-(.*)/;
+	    my $widget = $ref2widget{$href};
+	    $wd->_show_widget($widget);
+	    return;
+	}
+
+	$i = _lsearch('config\-.*', @tags);
+	if ($i >= 0) {
+	    if ($tags[$i] =~ /^config-(.*)(-.*)-(.*)$/) {
+		my $w_name = $1;
+		my $opt = $2;
+		my $class = $3;
+		my $widget = $ref2widget{$w_name};
+		$wd->_edit_config($widget, $opt, $class);
+		return;
+	    } else {
+		warn "Can't match $tags[$i]";
+	    }
+	}
     });
     my $last_line = '';
     $txt->tagBind(qw/widgetlink <Enter>/ => sub {
@@ -466,6 +550,85 @@ sub _WD_Characteristics {
 
 # XXX bei Refresh openlist merken und wiederherstellen
 
-1;
+######################################################################
+
+package Tk::WidgetDump::Standard;
+sub entry {
+    my($class, $p, $valref, $set_sub) = @_;
+    my $e = $p->Entry(-textvariable => $valref);
+    $e->bind("<Return>" => $set_sub);
+    $e->pack(-side => "left");
+}
+
+package Tk::WidgetDump::Color;
+sub entry {
+    my($class, $p, $valref, $set_sub) = @_;
+    require Tk::BrowseEntry;
+    my $e = $p->BrowseEntry(-textvariable => $valref,
+			    -browsecmd => $set_sub)->pack(-side => "left");
+
+    $e->insert("end", sort
+	              keys %{+{
+                        map { $_ =~ s/^\s+//; ((split(/\s+/, $_, 4))[3] => 1) }
+                        split(/\n/, `showrgb`)
+		      }}
+	      );
+    $e->bind("<Return>" => $set_sub);
+    $e;
+}
+
+package Tk::WidgetDump::Background;
+use base qw(Tk::WidgetDump::Color);
+
+package Tk::WidgetDump::HighlightBackground;
+use base qw(Tk::WidgetDump::Color);
+
+package Tk::WidgetDump::HighlightColor;
+use base qw(Tk::WidgetDump::Color);
+
+package Tk::WidgetDump::Foreground;
+use base qw(Tk::WidgetDump::Color);
+
+package Tk::WidgetDump::Font;
+sub entry {
+    my($class, $p, $valref, $set_sub) = @_;
+    my $f = $p->Frame->pack(-side => "left");
+    my $e = $p->Entry(-textvariable => $valref)->pack(-side => "left");
+    $p->Button(-text => "Browse",
+	       -command => sub {
+		   require Tk::FontDialog;
+		   my $new_font = $f->FontDialog(-initfont => $$valref)->Show;
+		   if (defined $new_font) {
+		       $$valref = $new_font;
+		       $set_sub->();
+		   }
+	       }
+	      )->pack(-side => "left");
+    $e->bind("<Return>" => $set_sub);
+    $f;
+}
+
+package Tk::WidgetDump::Relief;
+use base qw(Tk::WidgetDump::Standard);
+
+package Tk::WidgetDump::Cursor;
+use base qw(Tk::WidgetDump::Standard);
+
+package Tk::WidgetDump::Command;
+use base qw(Tk::WidgetDump::Standard);
+
+
+return 1 if caller;
+
+######################################################################
+
+package main;
+
+# self-test
+my $top = MainWindow->new;
+$top->withdraw;
+$top->WidgetDump;
+$top->WidgetDump;
+Tk::MainLoop;
 
 __END__
