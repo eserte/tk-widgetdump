@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.4 2000/01/17 01:16:39 eserte Exp $
+# $Id: WidgetDump.pm,v 1.5 2000/01/24 00:33:41 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999 Slaven Rezic. All rights reserved.
@@ -38,6 +38,7 @@ sub WidgetDump {
 		       -scrollbars => "osoe",
 		       -selectmode => "multiple",
 		       -exportselection => 1,
+		       -takefocus => 1,
 		       -command => sub {
 			   $hl->info('data', $_[0])->_WD_Flash;
 		       },
@@ -69,7 +70,13 @@ sub WidgetDump {
 					     );
 			 }
 			)->pack(-side => "left");
-    $t->bind("<Alt-r>" => sub { $rb->invoke });
+    my $cb = $bf->Button(-text => "Close",
+			 -command => sub {
+			     $t->destroy;
+			 }
+			)->pack(-side => "left");
+    $t->bind("<Alt-r>"  => sub { $rb->invoke });
+    $t->bind("<Escape>" => sub { $cb->invoke });
 }
 
 sub _WD_Flash {
