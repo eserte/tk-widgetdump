@@ -2,10 +2,10 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.19 2000/12/31 02:49:30 eserte Exp $
+# $Id: WidgetDump.pm,v 1.20 2001/02/10 20:32:39 eserte Exp $
 # Author: Slaven Rezic
 #
-# Copyright (C) 1999, 2000 Slaven Rezic. All rights reserved.
+# Copyright (C) 1999-2001 Slaven Rezic. All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 #
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.19 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.20 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -45,7 +45,8 @@ sub WidgetDump {
 
     my $hl;
     $hl = $t->Scrolled('Tree', -drawbranch => 1, -header => 1,
-		       -columns => 5,
+		       #-columns => 5,
+		       -columns => 4,
 		       -scrollbars => "osow",
 		       -selectmode => "multiple",
 		       -exportselection => 1,
@@ -64,7 +65,7 @@ sub WidgetDump {
     $hl->headerCreate(1, -text => "Tk Class");
     $hl->headerCreate(2, -text => "Characteristics");
     $hl->headerCreate(3, -text => "Perl-Class");
-    $hl->headerCreate(4, -text => "Size");
+    #XXX $hl->headerCreate(4, -text => "Size");
     $t->_insert_wd($hl, $top);
     if (exists $args{-openinfo}) {
 #XXX needs work
@@ -276,6 +277,17 @@ sub WidgetInfo {
     }
 
     $insert_method->("manager", "GeomManager");
+    my $manager = $w->manager;
+    if ($manager) {
+	eval 'my $info = join(", ", $w->' . $manager . 'Info);
+              $txt->insert("end", "    info:\t" . $info . "\n");'
+    }
+    eval {
+	my(@wrapper) = $w->wrapper;
+	if (@wrapper) {
+	    $txt->insert("end", "wrapper:\t" . join(", ", @wrapper) . "\n");
+	}
+    };
     $insert_method->("geometry");
     $insert_method->("rootx");
     $insert_method->("rooty");
@@ -609,7 +621,7 @@ sub _insert_wd {
 	    $hl->itemCreate($path, 2, -text => $char);
 	}
 	$hl->itemCreate($path, 3, -text => $ref);
-	$hl->itemCreate($path, 4, -text => $size);
+	#XXX$hl->itemCreate($path, 4, -text => $size);
 	$wd->_insert_wd($hl, $cw, $path);
 	#if ($cw->can('_WD_Children')) {
 	#    $cw->_WD_Children;
@@ -1178,3 +1190,62 @@ $top->WidgetDump;
 Tk::MainLoop;
 
 __END__
+
+=head1 NAME
+
+Tk::WidgetDump - dump the widget hierarchie
+
+=head1 SYNOPSIS
+
+    use Tk::WidgetDump;
+    $mw = new MainWindow;
+    $mw->WidgetDump;
+
+=head1 DESCRIPTION
+
+C<Tk::WidgetDump> helps in debugging Perl/Tk applications. By calling
+the C<WidgetDump> method, a new toplevel with the widget hierarchie
+will be displayed. The hierarchie can always be refreshed by the
+B<Refresh> button (e.g. if new widgets are added after calling the
+C<WidgetDump> method).
+
+By double-clicking on a widget entry, the widget flashes a new
+toplevel is opened containing the configuration options of the widget.
+It also displays other characteristics of the widget like children and
+parent widgets, size, position and server parameters. Configuration
+values can also be changed on the fly. Furthermore it is possible:
+
+=over 4
+
+=item *
+
+to navigate to the children or parents
+
+=item *
+
+to call widget methods interactively
+
+=item *
+
+to display internal widget data with L<Tk::ObjScanner|Tk::ObjScanner>
+(if available)
+
+=back
+
+If you want to call widget methods, you have to enter the method name
+with arguments only, e.g. (for creating a line on a canvas):
+
+     createLine(0,0,100,100)
+
+Because C<WidgetDump> is a pseudo widget, it cannot be configured
+itself.
+
+=head1 AUTHOR
+
+Slaven Rezic (eserte@onlineoffice.de)
+
+=head1 SEE ALSO
+
+Tk(3).
+
+=cut
