@@ -2,22 +2,22 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.24 2001/10/09 22:07:48 eserte Exp $
+# $Id: WidgetDump.pm,v 1.25 2002/02/04 21:58:03 eserte Exp $
 # Author: Slaven Rezic
 #
-# Copyright (C) 1999-2001 Slaven Rezic. All rights reserved.
+# Copyright (C) 1999-2002 Slaven Rezic. All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 #
-# Mail: eserte@cs.tu-berlin.de
-# WWW:  http://user.cs.tu-berlin.de/~eserte/
+# Mail: srezic@cpan.org
+# WWW:  http://www.rezic.de/eserte/
 #
 
 package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.24 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.25 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -36,6 +36,7 @@ sub WidgetDump {
 	$t = $top->Toplevel;
     }
     $t->title("WidgetDump of $top");
+    $t->geometry("620x420");
     foreach my $key (qw(Control-C q)) {
 	$t->bind("<$key>" => sub { $t->destroy });
     }
