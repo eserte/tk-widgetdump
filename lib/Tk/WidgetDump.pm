@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.14 2000/09/02 21:34:36 eserte Exp $
+# $Id: WidgetDump.pm,v 1.15 2000/09/02 22:39:08 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999, 2000 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.14 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.15 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -127,12 +127,12 @@ sub Flash {
 
 	my $old_bg = $w->cget(-background);
 	# leicht verzögern, damit -background nicht vom Blinken verfälscht wird
-	$w->Tk::after(10, sub { $w->configure(-background => "red") });
+	$w->after(10, sub { $w->configure(-background => "red") });
 	$w->Tk::raise;
 	my $i = 0;
 
 	my $flash_rep;
-	$flash_rep = $w->Tk::repeat
+	$flash_rep = $w->repeat
 	  (500,
 	   sub {
 	       if ($i % 2 == 0) {
@@ -340,10 +340,10 @@ sub method_call {
 	}
 	$ww = $ww; # XXX ???????
 	my $cmd = '$ww->' . $eval;
-	my $res = eval($cmd);
+	my(@res) = eval($cmd);
 	require Data::Dumper;
-	print Data::Dumper->Dumpxs([$res, $@],[$cmd, 'Error']);
-	print "ref \$res = <$res>\n";
+	print Data::Dumper->Dumpxs([\@res, $@],[$cmd, 'Error']);
+	print "\@res = <@res>\n";
     });
 }
 
