@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.27 2002/07/27 20:48:27 eserte Exp $
+# $Id: WidgetDump.pm,v 1.28 2002/07/29 21:02:24 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999-2002 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.27 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.28 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -444,26 +444,48 @@ sub WidgetInfo {
 
     $b = $txt->Button
 	(-text => "Show bindings",
-	 -command => sub {
-	     my $t = $txt->Toplevel(-title => 'Bindings');
-	     my $ttxt = $t->Scrolled('ROText')->pack(-fill => 'both',
-						     -expand => 1);
-	     foreach my $bindtag ($w->bindtags) {
-		 $ttxt->insert("end", "Bind tag: $bindtag\n\n");
-		 foreach my $bind ($w->Tk::bind($bindtag)) {
-		     my $cb = $w->Tk::bind($bindtag, $bind);
-		     if (UNIVERSAL::isa($cb, 'ARRAY')) {
-			 $cb = join ",", @$cb;
-		     }
-		     $ttxt->insert("end", $bind . " => " . $cb . "\n");
-		 }
-		 $ttxt->insert("end", "\n");
-	     }
-	 });
+	 -command => [$wd, 'show_bindings', $w]);
     $txt->windowCreate("end",
 		       -window => $b,
-		       );
+		      );
 
+}
+
+sub show_bindings {
+    my($wd, $w) = @_;
+    my $t = $wd->Toplevel(-title => 'Bindings');
+    my $ttxt = $t->Scrolled('ROText')->pack(-fill => 'both',
+					    -expand => 1);
+    _text_link_config($ttxt, sub { _bind_text_tag($_[0], $wd) } );
+    foreach my $bindtag ($w->bindtags) {
+	$ttxt->insert("end", "Bind tag: $bindtag\n\n");
+	foreach my $bind ($w->Tk::bind($bindtag)) {
+	    my $cb = $w->Tk::bind($bindtag, $bind);
+	    my $label;
+	    if (UNIVERSAL::isa($cb, 'ARRAY')) {
+		$label = join ",", @$cb;
+	    } else {
+		$label = $cb;
+	    }
+	    $ttxt->insert("end", $bind . " => ");
+	    $ttxt->insert("end", $label,
+			  ["widgetlink",
+			   "bind-" . $w . "|" . $bindtag . "|" . $bind]);
+	    $ttxt->insert("end", "\n");
+	}
+	$ttxt->insert("end", "\n");
+    }
+}
+
+sub show_binding_details {
+    my($wd, $widget, $bindtag, $bind) = @_;
+    my $t = $wd->Toplevel(-title => "Binding details");
+    my $ttxt = $t->Scrolled("ROText")->pack(-fill => "both", -expand => 1);
+    my $cb = $widget->Tk::bind($bindtag, $bind);
+    $ttxt->insert("end", "Binding <$bind> for bindtag <$bindtag>:\n");
+    require Data::Dumper;
+    my $txt = Data::Dumper->new([$cb],[])->Deparse(1)->Useqq(1)->Dump;
+    $ttxt->insert("end", $txt);
 }
 
 sub _show_widget {
@@ -541,24 +563,18 @@ sub method_call {
     });
 }
 
-sub canvas_config {
-    my($wd, $c, $item) = @_;
-    my $t = $wd->Toplevel(-title => "Canvas config of item $item");
-
-    my $txt = $t->Scrolled("ROText",
-			   -scrollbars => "osow"
-			  )->pack(-fill => "both", -expand => 1);
+sub _text_link_config {
+    my($txt, $code) = @_;
     $txt->tagConfigure(qw/widgetlink -underline 1/);
     $txt->tagConfigure(qw/hot        -foreground red/);
-    $txt->tagBind(qw/widgetlink <ButtonRelease-1>/ =>
-		  sub { _bind_text_tag($_[0], $wd) } );
-    my $last_line = '';
+    $txt->tagBind(qw/widgetlink <ButtonRelease-1>/ => $code);
+    $txt->{last_line} = '';
     $txt->tagBind(qw/widgetlink <Enter>/ => sub {
 	my($text) = @_;
 	my $e = $text->XEvent;
 	my($x, $y) = ($e->x, $e->y);
-	$last_line = $text->index("\@$x,$y linestart");
-	$text->tagAdd('hot', $last_line, "$last_line lineend");
+	$txt->{last_line} = $text->index("\@$x,$y linestart");
+	$text->tagAdd('hot', $txt->{last_line}, $txt->{last_line}." lineend");
 	$text->configure(qw/-cursor hand2/);
     });
     $txt->tagBind(qw/widgetlink <Leave>/ => sub {
@@ -571,12 +587,22 @@ sub canvas_config {
 	my $e = $text->XEvent;
 	my($x, $y) = ($e->x, $e->y);
 	my $new_line = $text->index("\@$x,$y linestart");
-	if ($new_line ne $last_line) {
+	if ($new_line ne $txt->{last_line}) {
 	    $text->tagRemove(qw/hot 1.0 end/);
-	    $last_line = $new_line;
-	    $text->tagAdd('hot', $last_line, "$last_line lineend");
+	    $txt->{last_line} = $new_line;
+	    $text->tagAdd('hot', $txt->{last_line}, $txt->{last_line}." lineend");
 	}
     });
+}
+
+sub canvas_config {
+    my($wd, $c, $item) = @_;
+    my $t = $wd->Toplevel(-title => "Canvas config of item $item");
+
+    my $txt = $t->Scrolled("ROText",
+			   -scrollbars => "osow"
+			  )->pack(-fill => "both", -expand => 1);
+    _text_link_config($txt, sub { _bind_text_tag($_[0], $wd) } );
 
     $txt->insert("end", "Configuration:\n\n");
     foreach my $cc ($c->itemconfigure($item)) {
@@ -600,36 +626,7 @@ sub canvas_dump {
     require Tk::ROText;
     my $txt = $t->Scrolled("ROText", -scrollbars => "osow"
 			  )->pack(-fill => "both", -expand => 1);
-
-    $txt->tagConfigure(qw/widgetlink -underline 1/);
-    $txt->tagConfigure(qw/hot        -foreground red/);
-    $txt->tagBind(qw/widgetlink <ButtonRelease-1>/ =>
-		  sub { _bind_text_tag($_[0], $wd) } );
-    my $last_line = '';
-    $txt->tagBind(qw/widgetlink <Enter>/ => sub {
-	my($text) = @_;
-	my $e = $text->XEvent;
-	my($x, $y) = ($e->x, $e->y);
-	$last_line = $text->index("\@$x,$y linestart");
-	$text->tagAdd('hot', $last_line, "$last_line lineend");
-	$text->configure(qw/-cursor hand2/);
-    });
-    $txt->tagBind(qw/widgetlink <Leave>/ => sub {
-	my($text) = @_;
-	$text->tagRemove(qw/hot 1.0 end/);
-	$text->configure(qw/-cursor xterm/);
-    });
-    $txt->tagBind(qw/widgetlink <Motion>/ => sub {
-	my($text) = @_;
-	my $e = $text->XEvent;
-	my($x, $y) = ($e->x, $e->y);
-	my $new_line = $text->index("\@$x,$y linestart");
-	if ($new_line ne $last_line) {
-	    $text->tagRemove(qw/hot 1.0 end/);
-	    $last_line = $new_line;
-	    $text->tagAdd('hot', $last_line, "$last_line lineend");
-	}
-    });
+    _text_link_config($txt, sub { _bind_text_tag($_[0], $wd) } );
 
     foreach my $i ($c->find("all")) {
 	$txt->insert("end", "$i (" . $c->type($i) . ") [" .
@@ -822,6 +819,17 @@ sub _bind_text_tag {
 	}
     }
 
+    $i = _lsearch('bind\-.*', @tags);
+    if ($i >= 0) {
+	if ($tags[$i] =~ /^bind-(.*)\|(.*)\|(.*)$/) {
+	    my $w_name = $1;
+	    my $bindtag = $2;
+	    my $bind = $3;
+	    my $widget = $ref2widget{$w_name};
+	    $wd->show_binding_details($widget, $bindtag, $bind);
+	    return;
+	}
+    }
     warn "Can't match $tags[$i]";
 }
 
@@ -847,36 +855,7 @@ sub _get_widget_info_window {
 			    -tabs => [map { (5*$_) . "c" } (1 .. 8)],
 			    -wrap => "none",
 			   )->pack(-expand => 1, -fill => "both");
-
-    $txt->tagConfigure(qw/widgetlink -underline 1/);
-    $txt->tagConfigure(qw/hot        -foreground red/);
-    $txt->tagBind(qw/widgetlink <ButtonRelease-1>/ =>
-		  sub { _bind_text_tag($_[0], $wd) } );
-    my $last_line = '';
-    $txt->tagBind(qw/widgetlink <Enter>/ => sub {
-	my($text) = @_;
-	my $e = $text->XEvent;
-	my($x, $y) = ($e->x, $e->y);
-	$last_line = $text->index("\@$x,$y linestart");
-	$text->tagAdd('hot', $last_line, "$last_line lineend");
-	$text->configure(qw/-cursor hand2/);
-    });
-    $txt->tagBind(qw/widgetlink <Leave>/ => sub {
-	my($text) = @_;
-	$text->tagRemove(qw/hot 1.0 end/);
-	$text->configure(qw/-cursor xterm/);
-    });
-    $txt->tagBind(qw/widgetlink <Motion>/ => sub {
-	my($text) = @_;
-	my $e = $text->XEvent;
-	my($x, $y) = ($e->x, $e->y);
-	my $new_line = $text->index("\@$x,$y linestart");
-	if ($new_line ne $last_line) {
-	    $text->tagRemove(qw/hot 1.0 end/);
-	    $last_line = $new_line;
-	    $text->tagAdd('hot', $last_line, "$last_line lineend");
-	}
-    });
+    _text_link_config($txt, sub { _bind_text_tag($_[0], $wd) } );
 
     $wi->Advertise("Information" => $txt);
 
