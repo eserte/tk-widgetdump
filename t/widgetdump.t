@@ -19,6 +19,9 @@ foreach my $w (qw(Label Entry Button Listbox Canvas)) {
     $top->$w()->pack;
 }
 
+# code references are evil:
+$top->{EvilCode} = sub { print "test " };
+
 #$top->WidgetDump;
 eval { $top->WidgetDump; };
 if ($@) {
