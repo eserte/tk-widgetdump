@@ -14,6 +14,7 @@ $loaded = 1;
 print "ok 1\n";
 
 $top = new MainWindow;
+#$top->WidgetDump;
 eval { $top->WidgetDump; };
 if ($@) {
     print "not ";
