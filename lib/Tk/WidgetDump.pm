@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.12 2000/08/29 21:48:28 eserte Exp $
+# $Id: WidgetDump.pm,v 1.13 2000/09/02 21:31:05 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999, 2000 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.12 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -158,6 +158,8 @@ sub WidgetInfo {
     my $wd = shift;
     my $w = shift;
 
+    $wd->{WidgetInfoWidget} = $w;
+
     my $wi = $wd->_get_widget_info_window;
     $wi->title("Widget Info for " . $w);
 
@@ -168,7 +170,8 @@ sub WidgetInfo {
     foreach my $c ($w->configure) {
 	$txt->insert("end",
 		     join("\t", map { !defined $_ ? "<undef>" : $_ } @$c),
-		     ["widgetlink", "config-" . $w . $c->[0] . "-" . $c->[2]],
+		     ["widgetlink",
+		      "config-" . $w . ($c->[0]||"") . "-" . ($c->[2]||"")],
 		     "\n");
     }
     $txt->insert("end", "\n");
@@ -681,6 +684,10 @@ sub _get_widget_info_window {
 
     my $f = $wi->Frame->pack;
 
+    my $rb = $f->Button(-text => "Refresh",
+			-command => sub {
+			    $wd->WidgetInfo($wd->{WidgetInfoWidget});
+			})->pack(-side => "left");
     my $cb = $f->Button(-text => "Close",
 			-command => sub { $wi->destroy }
 			)->pack(-side => "left");
