@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.8 2000/08/24 23:40:15 eserte Exp $
+# $Id: WidgetDump.pm,v 1.9 2000/08/25 02:23:36 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999, 2000 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -293,9 +293,9 @@ sub _edit_config {
     $t->Label(-text => "Edit $opt for $w:")->pack(-side => "left");
     my $e;
     $e = eval 'Tk::WidgetDump::' . $class . '->entry($t, \$val, $set_sub)';
-    #warn $@ if $@;
+warn $@ if $@;
     if ($@) {
-	$e = eval 'Tk::WidgetDump::Standard->entry($t, \$val, $set_sub)';
+	$e = eval 'Tk::WidgetDump::Entry->entry($t, \$val, $set_sub)';
 	warn $@ if $@;
     }
     $e->focus if Tk::Exists($e);
@@ -552,12 +552,79 @@ sub _WD_Characteristics {
 
 ######################################################################
 
-package Tk::WidgetDump::Standard;
+package Tk::WidgetDump::Entry;
 sub entry {
     my($class, $p, $valref, $set_sub) = @_;
     my $e = $p->Entry(-textvariable => $valref);
     $e->bind("<Return>" => $set_sub);
     $e->pack(-side => "left");
+}
+
+package Tk::WidgetDump::BrowseEntry;
+sub entry {
+    my($class, $p, $valref, $set_sub) = @_;
+    require Tk::BrowseEntry;
+    my $e = $p->BrowseEntry(-textvariable => $valref,
+			    -browsecmd => $set_sub)->pack(-side => "left");
+
+    $e->insert("end", $class->entries);
+    $e->bind("<Return>" => $set_sub);
+    $e;
+}
+
+package Tk::WidgetDump::_MyNumEntry;
+eval {
+    require Tk::NumEntry;
+    @Tk::WidgetDump::_MyNumEntry::ISA = qw(Tk::NumEntry);
+    Construct Tk::Widget '_MyNumEntry';
+    sub Populate {
+	my($w, $args) = @_;
+	$w->SUPER::Populate($args);
+	$w->ConfigSpecs(-setcmd => ['CALLBACK']);
+    }
+    sub incdec {
+	my $w = shift;
+	my $r = $w->Tk::NumEntry::incdec(@_);
+	$w->Callback(-setcmd => $w);
+	$r;
+    }
+};
+warn $@ if $@;
+$Tk::WidgetDump::_MyNumEntry::can_mynumentry = 1 unless $@;
+
+package Tk::WidgetDump::NumEntry;
+sub entry {
+    eval {
+	die "No NumEntry"
+	    if !$Tk::WidgetDump::_MyNumEntry::can_mynumentry;
+    };
+    if ($@) {
+	warn $@;
+	shift->Tk::WidgetDump::Entry::entry(@_);
+    } else {
+	my($class, $p, $valref, $set_sub) = @_;
+	my $e = $p->_MyNumEntry
+	    (-textvariable => $valref,
+	     -value => $$valref,
+	     -setcmd => sub { $set_sub->() },
+	     -command => sub { $set_sub->() }
+	    )->pack(-side => "left");
+	$e->bind("<Return>" => $set_sub);
+	$e;
+    }
+}
+
+package Tk::WidgetDump::Bool;
+sub entry {
+    my($class, $p, $valref, $set_sub) = @_;
+    my $e = $p->Checkbutton(-variable => $valref,
+			    -onvalue => 1,
+			    -offvalue => 0,
+			    -command => $set_sub)->pack(-side => "left");
+
+    $e->insert("end", $class->entries);
+    $e->bind("<Return>" => $set_sub);
+    $e;
 }
 
 package Tk::WidgetDump::Color;
@@ -609,13 +676,121 @@ sub entry {
 }
 
 package Tk::WidgetDump::Relief;
-use base qw(Tk::WidgetDump::Standard);
+use base qw(Tk::WidgetDump::BrowseEntry);
+sub entries { qw(raised sunken flat ridge solid groove) }
+
+package Tk::WidgetDump::Anchor;
+use base qw(Tk::WidgetDump::BrowseEntry);
+sub entries { qw(center n ne e se s sw w nw) }
+
+package Tk::WidgetDump::Justify;
+use base qw(Tk::WidgetDump::BrowseEntry);
+sub entries { qw(left center right) }
 
 package Tk::WidgetDump::Cursor;
-use base qw(Tk::WidgetDump::Standard);
+sub entry {
+    my($class, $p, $valref, $set_sub) = @_;
+    my $f = $p->Frame->pack(-side => "left");
+    require Tk::BrowseEntry;
+    require Tk::Config;
+    my $e = $p->BrowseEntry(-textvariable => $valref,
+			    -browsecmd => $set_sub)->pack(-side => "left");
+    (my $xinc = $Tk::Config::xinc) =~ s/^-I//;
+    if (open(CF, "$xinc/X11/cursorfont.h")) {
+	while(<CF>) {
+	    chomp;
+	    if (/#define\s+XC_(\S+)/) {
+		$e->insert("end", $1);
+	    }
+	}
+	close CF;
+    } else {
+	warn "Can't open cursorfont.h";
+    }
+    $p->Button(-text => "Bitmapfile",
+	       -command => sub {
+		   my $file = $f->getOpenFile;
+		   if (defined $file) {
+		       $$valref = ['@' . $file, "black"];
+		       $set_sub->();
+		   }
+	       }
+	      )->pack(-side => "left");
+    $e->bind("<Return>" => $set_sub);
+    $f;
+}
 
 package Tk::WidgetDump::Command;
-use base qw(Tk::WidgetDump::Standard);
+use base qw(Tk::WidgetDump::Entry);
+
+package Tk::WidgetDump::Image;
+sub entry {
+    my($class, $p, $valref, $set_sub) = @_;
+    my $f = $p->Frame->pack(-side => "left");
+    my $e = $p->Entry(-textvariable => $valref)->pack(-side => "left");
+    $p->Button(-text => "Browse",
+	       -command => sub {
+		   my $file = $f->getOpenFile;
+		   if (defined $file) {
+		       my $photo = $p->Photo(-file => $file);
+		       # XXX image cache
+		       if ($photo) {
+			   $$valref = $photo;
+			   $set_sub->();
+		       }
+		   }
+	       }
+	      )->pack(-side => "left");
+    $e->bind("<Return>" => sub {
+		 if ($$valref eq '') {
+		     undef $$valref;
+		 }
+		 $set_sub->();
+	     });
+    $f;
+}
+
+package Tk::WidgetDump::Tile;
+use base qw(Tk::WidgetDump::Image);
+
+package Tk::WidgetDump::Bitmap;
+sub entry {
+    my($class, $p, $valref, $set_sub) = @_;
+    my $f = $p->Frame->pack(-side => "left");
+    my $e = $p->Entry(-textvariable => $valref)->pack(-side => "left");
+    $p->Button(-text => "Browse",
+	       -command => sub {
+		   my $file = $f->getOpenFile;
+		   if (defined $file) {
+		       $$valref = '@' . $file;
+		       $set_sub->();
+		   }
+	       }
+	      )->pack(-side => "left");
+    $e->bind("<Return>" => $set_sub);
+    $f;
+}
+
+package Tk::WidgetDump::Pixels;
+use base qw(Tk::WidgetDump::NumEntry);
+
+package Tk::WidgetDump::BorderWidth;
+use base qw(Tk::WidgetDump::Pixels);
+
+package Tk::WidgetDump::Height;
+use base qw(Tk::WidgetDump::Pixels);
+
+package Tk::WidgetDump::Width;
+use base qw(Tk::WidgetDump::Pixels);
+
+package Tk::WidgetDump::HighlightThickness;
+use base qw(Tk::WidgetDump::Pixels);
+
+package Tk::WidgetDump::Pad;
+use base qw(Tk::WidgetDump::Pixels);
+
+package Tk::WidgetDump::Underline;
+use base qw(Tk::WidgetDump::NumEntry);
 
 
 return 1 if caller;
