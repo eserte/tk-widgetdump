@@ -1,5 +1,6 @@
 Changes
 MANIFEST
 Makefile.PL
-WidgetDump.pm
+lib/Tk/WidgetDump.pm
+lib/Devel/WidgetDump.pm
 test.pl
