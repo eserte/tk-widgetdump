@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.11 2000/08/29 17:28:45 eserte Exp $
+# $Id: WidgetDump.pm,v 1.12 2000/08/29 21:48:28 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999, 2000 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.11 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.12 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -44,7 +44,7 @@ sub WidgetDump {
     my $hl;
     $hl = $t->Scrolled('Tree', -drawbranch => 1, -header => 1,
 		       -columns => 5,
-		       -scrollbars => "osoe",
+		       -scrollbars => "osow",
 		       -selectmode => "multiple",
 		       -exportselection => 1,
 		       -takefocus => 1,
@@ -265,11 +265,21 @@ sub WidgetInfo {
 
     my $b = $txt->Button(-text => "Method call",
 			 -command => sub { 
-			     $wd->_method_call($w);
+			     $wd->method_call($w);
 			 });
     $txt->windowCreate("end",
 		       -window => $b,
 		       );
+
+    if ($w->isa('Tk::Canvas')) {
+	my $b = $txt->Button(-text => "Canvas dump",
+			     -command => sub {
+				 $wd->canvas_dump($w);
+			     });
+	$txt->windowCreate("end",
+			   -window => $b,
+			  );
+    }
 
 }
 
@@ -302,7 +312,7 @@ sub _edit_config {
     $t->Label(-text => "Edit $opt for $w:")->pack(-side => "left");
     my $e;
     $e = eval 'Tk::WidgetDump::' . $class . '->entry($t, \$val, $set_sub)';
-warn $@ if $@;
+    #warn $@ if $@;
     if ($@) {
 	$e = eval 'Tk::WidgetDump::Entry->entry($t, \$val, $set_sub)';
 	warn $@ if $@;
@@ -311,7 +321,7 @@ warn $@ if $@;
     $t->bind("<Escape>" => [$t, 'destroy']);
 }
 
-sub _method_call {
+sub method_call {
     my($wd, $w) = @_;
 
     my $t = $wd->Toplevel(-title => "Method call");
@@ -332,6 +342,162 @@ sub _method_call {
 	print Data::Dumper->Dumpxs([$res, $@],[$cmd, 'Error']);
 	print "ref \$res = <$res>\n";
     });
+}
+
+sub canvas_config {
+    my($wd, $c, $item) = @_;
+    my $t = $wd->Toplevel(-title => "Canvas config of item $item");
+
+    my $txt = $t->Scrolled("ROText",
+			   -scrollbars => "osow"
+			  )->pack(-fill => "both", -expand => 1);
+    $txt->tagConfigure(qw/widgetlink -underline 1/);
+    $txt->tagConfigure(qw/hot        -foreground red/);
+    $txt->tagBind(qw/widgetlink <ButtonRelease-1>/ =>
+		  sub { _bind_text_tag($_[0], $wd) } );
+    my $last_line = '';
+    $txt->tagBind(qw/widgetlink <Enter>/ => sub {
+	my($text) = @_;
+	my $e = $text->XEvent;
+	my($x, $y) = ($e->x, $e->y);
+	$last_line = $text->index("\@$x,$y linestart");
+	$text->tagAdd('hot', $last_line, "$last_line lineend");
+	$text->configure(qw/-cursor hand2/);
+    });
+    $txt->tagBind(qw/widgetlink <Leave>/ => sub {
+	my($text) = @_;
+	$text->tagRemove(qw/hot 1.0 end/);
+	$text->configure(qw/-cursor xterm/);
+    });
+    $txt->tagBind(qw/widgetlink <Motion>/ => sub {
+	my($text) = @_;
+	my $e = $text->XEvent;
+	my($x, $y) = ($e->x, $e->y);
+	my $new_line = $text->index("\@$x,$y linestart");
+	if ($new_line ne $last_line) {
+	    $text->tagRemove(qw/hot 1.0 end/);
+	    $last_line = $new_line;
+	    $text->tagAdd('hot', $last_line, "$last_line lineend");
+	}
+    });
+
+    $txt->insert("end", "Configuration:\n\n");
+    foreach my $cc ($c->itemconfigure($item)) {
+	$txt->insert("end",
+		     join("\t", map { !defined $_ ? "<undef>" : $_ } @$cc),
+		     ["widgetlink", "cconfig-" . $c . "-" . $item . $cc->[0]],
+		     "\n"
+		    );
+    }
+
+    $txt->insert("end", "Coords",
+		 ["widgetlink", "ccoords-" . $c . "-" . $item],
+		 "\n"
+		);
+
+}
+
+sub canvas_dump {
+    my($wd, $c) = @_;
+    my $t = $wd->Toplevel(-title => "Canvas dump of $c");
+    require Tk::ROText;
+    my $txt = $t->Scrolled("ROText", -scrollbars => "osow"
+			  )->pack(-fill => "both", -expand => 1);
+
+    $txt->tagConfigure(qw/widgetlink -underline 1/);
+    $txt->tagConfigure(qw/hot        -foreground red/);
+    $txt->tagBind(qw/widgetlink <ButtonRelease-1>/ =>
+		  sub { _bind_text_tag($_[0], $wd) } );
+    my $last_line = '';
+    $txt->tagBind(qw/widgetlink <Enter>/ => sub {
+	my($text) = @_;
+	my $e = $text->XEvent;
+	my($x, $y) = ($e->x, $e->y);
+	$last_line = $text->index("\@$x,$y linestart");
+	$text->tagAdd('hot', $last_line, "$last_line lineend");
+	$text->configure(qw/-cursor hand2/);
+    });
+    $txt->tagBind(qw/widgetlink <Leave>/ => sub {
+	my($text) = @_;
+	$text->tagRemove(qw/hot 1.0 end/);
+	$text->configure(qw/-cursor xterm/);
+    });
+    $txt->tagBind(qw/widgetlink <Motion>/ => sub {
+	my($text) = @_;
+	my $e = $text->XEvent;
+	my($x, $y) = ($e->x, $e->y);
+	my $new_line = $text->index("\@$x,$y linestart");
+	if ($new_line ne $last_line) {
+	    $text->tagRemove(qw/hot 1.0 end/);
+	    $last_line = $new_line;
+	    $text->tagAdd('hot', $last_line, "$last_line lineend");
+	}
+    });
+
+    foreach my $i ($c->find("all")) {
+	$txt->insert("end", "$i (" . $c->type($i) . ") [" .
+		     join(",",$c->gettags($i)) . "]",
+		     ["widgetlink", "c-" . $c . "-" . $i],
+		     "\n");
+    }
+
+}
+
+sub edit_canvas_config {
+    my($wd, $c, $item, $opt) = @_;
+
+    my $val;
+    eval {
+	$val = $c->itemcget($item, $opt);
+    };
+    if ($@) {
+	warn $@;
+	return;
+    }
+    my $oldval = $val;
+
+    my $t = $wd->Toplevel(-title => "Edit canvas config");
+    my $set_sub = sub {
+	eval {
+	    $c->itemconfigure($item, $opt => $val);
+	};
+	warn $@ if $@;
+    };
+    $t->Label(-text => "Edit $opt for $item:")->pack(-side => "left");
+    my $e;
+    $e = eval 'Tk::WidgetDump::Entry->entry($t, \$val, $set_sub)';
+    warn $@ if $@;
+    $e->focus if Tk::Exists($e);
+    $t->bind("<Escape>" => [$t, 'destroy']);
+}
+
+sub edit_canvas_coords {
+    my($wd, $c, $item) = @_;
+
+    my $val;
+    eval {
+	$val = join(",", $c->coords($item));
+    };
+    if ($@) {
+	warn $@;
+	return;
+    }
+    my $oldval = $val;
+
+    my $t = $wd->Toplevel(-title => "Edit canvas coords");
+    my $set_sub = sub {
+	eval {
+	    my @c = split(/,/, $val);
+	    $c->coords($item, @c);
+	};
+	warn $@ if $@;
+    };
+    $t->Label(-text => "Edit coords for $item:")->pack(-side => "left");
+    my $e;
+    $e = eval 'Tk::WidgetDump::Entry->entry($t, \$val, $set_sub)';
+    warn $@ if $@;
+    $e->focus if Tk::Exists($e);
+    $t->bind("<Escape>" => [$t, 'destroy']);
 }
 
 sub _insert_wd {
@@ -398,6 +564,70 @@ sub _crop {
     }
 }
 
+sub _bind_text_tag {
+    my($text, $wd) = @_;
+
+    my $index = $text->index('current');
+    my @tags = $text->tagNames($index);
+
+    my $i = _lsearch('href\-.*', @tags);
+    if ($i >= 0) {
+	my($href) = $tags[$i] =~ /href-(.*)/;
+	my $widget = $ref2widget{$href};
+	$wd->_show_widget($widget);
+	return;
+    }
+
+    $i = _lsearch('config\-.*', @tags);
+    if ($i >= 0) {
+	if ($tags[$i] =~ /^config-(.*)(-.*)-(.*)$/) {
+	    my $w_name = $1;
+	    my $opt = $2;
+	    my $class = $3;
+	    my $widget = $ref2widget{$w_name};
+	    $wd->_edit_config($widget, $opt, $class);
+	    return;
+	}
+    }
+
+    $i = _lsearch('c\-.*', @tags);
+    if ($i >= 0) {
+	if ($tags[$i] =~ /^c-(.*)-(.*)$/) {
+	    my $w_name = $1;
+	    my $item = $2;
+	    #my $canv_opt = $3;
+	    my $widget = $ref2widget{$w_name};
+	    $wd->canvas_config($widget, $item);
+	    return;
+	}
+    }
+
+    $i = _lsearch('cconfig\-.*', @tags);
+    if ($i >= 0) {
+	if ($tags[$i] =~ /^cconfig-(.*)-(.*)(-.*)$/) {
+	    my $w_name = $1;
+	    my $item = $2;
+	    my $opt = $3;
+	    my $widget = $ref2widget{$w_name};
+	    $wd->edit_canvas_config($widget, $item, $opt);
+	    return;
+	}
+    }
+
+    $i = _lsearch('ccoords\-.*', @tags);
+    if ($i >= 0) {
+	if ($tags[$i] =~ /^ccoords-(.*)-(.*)$/) {
+	    my $w_name = $1;
+	    my $item = $2;
+	    my $widget = $ref2widget{$w_name};
+	    $wd->edit_canvas_coords($widget, $item);
+	    return;
+	}
+    }
+
+    warn "Can't match $tags[$i]";
+}
+
 sub _get_widget_info_window {
     my $wd = shift;
 
@@ -411,41 +641,16 @@ sub _get_widget_info_window {
     $wi = $wd->Component(Toplevel => "WidgetInfo");
     $wi->title("Widget Info");
 
-    my $txt = $wi->Scrolled("Text",
+    require Tk::ROText;
+    my $txt = $wi->Scrolled("ROText",
 			    -tabs => [map { (5*$_) . "c" } (1 .. 8)],
 			    -wrap => "none",
 			   )->pack(-expand => 1, -fill => "both");
 
     $txt->tagConfigure(qw/widgetlink -underline 1/);
     $txt->tagConfigure(qw/hot        -foreground red/);
-    $txt->tagBind(qw/widgetlink <ButtonRelease-1>/ => sub {
-	my($text) = @_;
-
-	my $index = $text->index('current');
-	my @tags = $txt->tagNames($index);
-
-	my $i = _lsearch('href\-.*', @tags);
-	if ($i >= 0) {
-	    my($href) = $tags[$i] =~ /href-(.*)/;
-	    my $widget = $ref2widget{$href};
-	    $wd->_show_widget($widget);
-	    return;
-	}
-
-	$i = _lsearch('config\-.*', @tags);
-	if ($i >= 0) {
-	    if ($tags[$i] =~ /^config-(.*)(-.*)-(.*)$/) {
-		my $w_name = $1;
-		my $opt = $2;
-		my $class = $3;
-		my $widget = $ref2widget{$w_name};
-		$wd->_edit_config($widget, $opt, $class);
-		return;
-	    } else {
-		warn "Can't match $tags[$i]";
-	    }
-	}
-    });
+    $txt->tagBind(qw/widgetlink <ButtonRelease-1>/ =>
+		  sub { _bind_text_tag($_[0], $wd) } );
     my $last_line = '';
     $txt->tagBind(qw/widgetlink <Enter>/ => sub {
 	my($text) = @_;
@@ -870,7 +1075,8 @@ package main;
 
 # self-test
 my $top = MainWindow->new;
-$top->withdraw;
+$top->Canvas->pack->createLine(0,0,100,100);
+#$top->withdraw;
 $top->WidgetDump;
 $top->WidgetDump;
 Tk::MainLoop;
