@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.16 2000/09/30 10:07:42 eserte Exp $
+# $Id: WidgetDump.pm,v 1.17 2000/10/02 21:36:44 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999, 2000 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.16 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.17 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -41,6 +41,8 @@ sub WidgetDump {
 
     bless $t, 'Tk::WidgetDump';
 
+    my $bf = $t->Frame->pack(-fill => 'x', -side => "bottom");
+
     my $hl;
     $hl = $t->Scrolled('Tree', -drawbranch => 1, -header => 1,
 		       -columns => 5,
@@ -56,6 +58,7 @@ sub WidgetDump {
 			   $t->_show_widget($sw);
 		       },
 		      )->pack(-fill => 'both', -expand => 1);
+    $t->Advertise("Tree" => $hl);
     $hl->focus;
     $hl->headerCreate(0, -text => "Tk Name");
     $hl->headerCreate(1, -text => "Tk Class");
@@ -72,17 +75,21 @@ sub WidgetDump {
 	$hl->autosetmode;
     }
 
-    my $bf = $t->Frame->pack(-fill => 'x');
     my $rb = $bf->Button(-text => "Refresh",
 			 -command => sub {
+			     my %args;
 			     my %openinfo;
 			     foreach ($hl->info('children')) {
 				 $openinfo{$_} = $hl->getmode($_);
 			     }
+			     my $first_seen = $hl->nearest($hl->height/2);
+			     if (defined $first_seen) {
+				 $args{'-see'} = $hl->info("data",$first_seen);
+			     }
 			     $top->WidgetDump(-toplevel => $t,
 					      -font => $hl->cget(-font),
 					      #-openinfo => \%openinfo,
-					      #-position => XXXX,
+					      %args,
 					     );
 			 }
 			)->pack(-side => "left");
@@ -125,6 +132,10 @@ sub WidgetDump {
 			  my $e = $_[0]->XEvent;
 			  $_[0]->PostPopupMenu($e->X, $e->Y);
 		      });
+    }
+
+    if ($args{'-see'}) {
+	$t->see($args{'-see'});
     }
 }
 
@@ -332,6 +343,20 @@ sub _show_widget {
     my($wd, $w) = @_;
     $wd->Flash($w);
     $wd->WidgetInfo($w);
+}
+
+sub see {
+    my($wd, $w) = @_;
+    my $tree = $wd->Subwidget("Tree");
+    my $entry = ($tree->info("children"))[0];
+    while (defined $entry and $entry ne "") {
+	if ($tree->info("data", $entry) eq $w) {
+	    $tree->see($entry);
+	    return;
+	}
+	$entry = $tree->info("next", $entry);
+    }
+    warn "Widget $w not found in Widget tree\n";
 }
 
 sub _edit_config {
@@ -588,7 +613,7 @@ sub _label_title {
 	eval {
 	    my $i = $w->cget(-image);
 	    if ($i->cget(-file) ne "") {
-		_crop(basename($i->cget(-file))) . " (image)";
+		$image = _crop(basename($i->cget(-file))) . " (image)";
 	    }
 	};
 	$image;
@@ -685,6 +710,10 @@ sub _get_widget_info_window {
 
     $wi = $wd->Component(Toplevel => "WidgetInfo");
     $wi->title("Widget Info");
+    if ($wi->screenwidth > 930 and
+	$wi->screenheight > 450) {
+	$wi->geometry("930x450");
+    }
 
     require Tk::ROText;
     my $txt = $wi->Scrolled("ROText",
@@ -821,8 +850,8 @@ package # hide from CPAN indexer
   Tk::Menu;
 sub _WD_Characteristics {
     my $w = shift;
-    
-    Tk::WidgetDump::_crop($w->cget(-title)) . " (" . $w->cget("-type") . ")";
+    my $title = $w->cget(-title) || "(no title)";
+    Tk::WidgetDump::_crop($title) . " (" . $w->cget("-type") . ")";
 }
 
 sub _WD_Children {
