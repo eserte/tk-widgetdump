@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.23 2001/04/07 22:48:13 eserte Exp $
+# $Id: WidgetDump.pm,v 1.24 2001/10/09 22:07:48 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999-2001 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.23 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.24 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -120,11 +120,12 @@ sub WidgetDump {
 #      $bf->Checkbutton(-text => "Track",
 #  		     -variable => \$t->{TrackWidgets},
 #  		    )->pack(-side => 'left');
-
+    if(0) { # not yet...
     $top->bind("<1>" => [ sub { return unless $t && Tk::Exists($t);
 				shift;
 				$t->SelectWidget(@_);
 			    }, Ev('X'), Ev('Y') ]);
+    }
 
     if ($hl->can("menu") and $hl->can("PostPopupMenu")) {
 	my $popup_menu = $hl->Menu
@@ -420,6 +421,28 @@ sub WidgetInfo {
 	     });
 	$txt->windowCreate("end", -window => $b);
     }
+
+    $b = $txt->Button
+	(-text => "Show bindings",
+	 -command => sub {
+	     my $t = $txt->Toplevel(-title => 'Bindings');
+	     my $ttxt = $t->Scrolled('ROText')->pack(-fill => 'both',
+						     -expand => 1);
+	     foreach my $bindtag ($w->bindtags) {
+		 $ttxt->insert("end", "Bind tag: $bindtag\n\n");
+		 foreach my $bind ($w->Tk::bind($bindtag)) {
+		     my $cb = $w->Tk::bind($bindtag, $bind);
+		     if (UNIVERSAL::isa($cb, 'ARRAY')) {
+			 $cb = join ",", @$cb;
+		     }
+		     $ttxt->insert("end", $bind . " => " . $cb . "\n");
+		 }
+		 $ttxt->insert("end", "\n");
+	     }
+	 });
+    $txt->windowCreate("end",
+		       -window => $b,
+		       );
 
 }
 
