@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.3 1999/10/07 08:28:48 eserte Exp $
+# $Id: WidgetDump.pm,v 1.4 2000/01/17 01:16:39 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999 Slaven Rezic. All rights reserved.
@@ -28,10 +28,16 @@ sub WidgetDump {
 	$t = $top->Toplevel;
     }
     $t->title("WidgetDump of $top");
+    foreach my $key (qw(Control-C q)) {
+	$t->bind("<$key>" => sub { $t->destroy });
+    }
+
     my $hl;
     $hl = $t->Scrolled('Tree', -drawbranch => 1, -header => 1,
 		       -columns => 5,
 		       -scrollbars => "osoe",
+		       -selectmode => "multiple",
+		       -exportselection => 1,
 		       -command => sub {
 			   $hl->info('data', $_[0])->_WD_Flash;
 		       },
@@ -52,17 +58,18 @@ sub WidgetDump {
 	$hl->autosetmode;
     }
     my $bf = $t->Frame->pack(-fill => 'x');
-    $bf->Button(-text => "Refresh",
-		-command => sub {
-		    my %openinfo;
-		    foreach ($hl->info('children')) {
-			$openinfo{$_} = $hl->getmode($_);
-		    }
-		    $top->WidgetDump(-toplevel => $t,
-				     #-openinfo => \%openinfo
-				    );
-		}
-	       )->pack(-side => "left");
+    my $rb = $bf->Button(-text => "Refresh",
+			 -command => sub {
+			     my %openinfo;
+			     foreach ($hl->info('children')) {
+				 $openinfo{$_} = $hl->getmode($_);
+			     }
+			     $top->WidgetDump(-toplevel => $t,
+					      #-openinfo => \%openinfo
+					     );
+			 }
+			)->pack(-side => "left");
+    $t->bind("<Alt-r>" => sub { $rb->invoke });
 }
 
 sub _WD_Flash {
@@ -125,6 +132,11 @@ sub _insert_wd {
 	#}
 	$i++;
     }
+}
+
+sub _delete_all {
+    my($hl) = @_;
+    $hl->delete("all");
 }
 
 sub _label_title {
