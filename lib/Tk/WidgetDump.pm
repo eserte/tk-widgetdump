@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.15 2000/09/02 22:39:08 eserte Exp $
+# $Id: WidgetDump.pm,v 1.16 2000/09/30 10:07:42 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999, 2000 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.15 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.16 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -48,6 +48,9 @@ sub WidgetDump {
 		       -selectmode => "multiple",
 		       -exportselection => 1,
 		       -takefocus => 1,
+		       -width => 40,
+		       -height => 20,
+		       ($args{-font} ? (-font => $args{-font}) : ()),
 		       -command => sub {
 			   my $sw = $hl->info('data', $_[0]);
 			   $t->_show_widget($sw);
@@ -68,6 +71,7 @@ sub WidgetDump {
     } else {
 	$hl->autosetmode;
     }
+
     my $bf = $t->Frame->pack(-fill => 'x');
     my $rb = $bf->Button(-text => "Refresh",
 			 -command => sub {
@@ -76,7 +80,9 @@ sub WidgetDump {
 				 $openinfo{$_} = $hl->getmode($_);
 			     }
 			     $top->WidgetDump(-toplevel => $t,
-					      #-openinfo => \%openinfo
+					      -font => $hl->cget(-font),
+					      #-openinfo => \%openinfo,
+					      #-position => XXXX,
 					     );
 			 }
 			)->pack(-side => "left");
@@ -87,6 +93,39 @@ sub WidgetDump {
 			)->pack(-side => "left");
     $t->bind("<Alt-r>"  => sub { $rb->invoke });
     $t->bind("<Escape>" => sub { $cb->invoke });
+
+    if ($hl->can("menu") and $hl->can("PostPopupMenu")) {
+	my $popup_menu = $hl->Menu
+	    (-menuitems =>
+	     [
+	      [Cascade => "~Edit", -menuitems =>
+	       [
+		[Button => "~Refresh", -command => sub { $rb->invoke }],
+		[Button => "~Close", -command => sub { $cb->invoke }],
+	       ],
+	      ],
+	      [Cascade => "~Font", -menuitems =>
+	       [
+		[Button => "~Tiny",
+		 -command => sub { $hl->configure(-font => "Helvetica 6") }],
+		[Button => "~Small",
+		 -command => sub { $hl->configure(-font => "Helvetica 8") }],
+		[Button => "~Normal",
+		 -command => sub { $hl->configure(-font => "Helvetica 10") }],
+		[Button => "~Large",
+		 -command => sub { $hl->configure(-font => "Helvetica 18") }],
+		[Button => "~Huge",
+		 -command => sub { $hl->configure(-font => "Helvetica 24") }],
+	       ]
+	      ]
+	     ]
+	    );
+	$hl->menu($popup_menu);
+	$hl->bind("<3>" => sub {
+			  my $e = $_[0]->XEvent;
+			  $_[0]->PostPopupMenu($e->X, $e->Y);
+		      });
+    }
 }
 
 sub _WD_Size {
@@ -240,6 +279,9 @@ sub WidgetInfo {
     $insert_method->("id");
     $insert_method->("ismapped");
     $insert_method->("viewable");
+
+# XXX bindtags
+# XXX bind?
 
     $txt->insert("end", "\nServer:\n");
     $insert_method->("server", "    id");
