@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.20 2001/02/10 20:32:39 eserte Exp $
+# $Id: WidgetDump.pm,v 1.21 2001/02/21 23:48:35 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999-2001 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.20 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.21 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -349,15 +349,25 @@ sub WidgetInfo {
 			  );
     }
 
-    eval {
-	require Tk::ObjScanner;
+    my $ObjScanner;
+    if (!eval {	require Tk::ObjEditor;
+		$ObjScanner = "ObjEditor";
+		1;
+	    }) {
+	eval { require Tk::ObjScanner;
+	       $ObjScanner = "ObjScanner";
+	       1;
+	   };
+    }
+
+    if (defined $ObjScanner) {
 	my $b = $txt->Button
-	    (-text => "ObjScanner",
+	    (-text => $ObjScanner,
 	     -command => sub {
-		 my $t = $b->Toplevel(-title => "ObjScanner");
-		 my $os = $t->ObjScanner
+		 my $t = $b->Toplevel(-title => $ObjScanner);
+		 my $os = $t->$ObjScanner
 		     (caller => $w,
-		      title  => 'ObjScanner $w',
+		      title  => "$ObjScanner $w",
 		      background       => 'white',
 		      selectbackground => 'beige',
 		      foldImage => $t->Photo(-file => Tk->findINC('folder.xpm')),
@@ -365,7 +375,7 @@ sub WidgetInfo {
 		      itemImage => $t->Photo(-file => Tk->findINC('textfile.xpm')))->pack(-fill => "both", -expand => 1);
 	     });
 	$txt->windowCreate("end", -window => $b);
-    };
+    }
 
 }
 
