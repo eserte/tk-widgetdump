@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.2 1999/08/06 08:00:39 eserte Exp $
+# $Id: WidgetDump.pm,v 1.3 1999/10/07 08:28:48 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999 Slaven Rezic. All rights reserved.
@@ -153,6 +153,24 @@ sub _crop {
 	$txt;
     }
 }
+
+# XXX weitermachen
+# die Idee: die gesamten Konfigurationsdaten aller Widgets per configure
+# feststellen und als String schreiben. Und das für alle Children des
+# Widgets. Zusätzlich die pack/grid/etc.-Information feststellen.
+# Das alles gibt dann ein Perl-Programm. Parents bei der Rekursion merken.
+# sub dump_as_perl {
+#     my $top = shift;
+    
+# }
+
+# sub dump_widget {
+#     my $w = shift;
+#     foreach $cdef ($w->configure) {
+# #	if (defined $cdef->[4]) {
+# #	    
+#     }
+# }
 
 package # hide from CPAN indexer
   Tk::Toplevel;
