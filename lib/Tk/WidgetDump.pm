@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.21 2001/02/21 23:48:35 eserte Exp $
+# $Id: WidgetDump.pm,v 1.22 2001/04/07 22:11:17 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999-2001 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.21 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.22 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -101,6 +101,8 @@ sub WidgetDump {
 			)->pack(-side => "left");
     $t->bind("<Alt-r>"  => sub { $rb->invoke });
     $t->bind("<Escape>" => sub { $cb->invoke });
+
+    $top->bind("<1>" => [ $t, 'SelectWidget', Ev('X'), Ev('Y') ]);
 
     if ($hl->can("menu") and $hl->can("PostPopupMenu")) {
 	my $popup_menu = $hl->Menu
@@ -203,6 +205,25 @@ sub Flash {
         $wd->{OldRepeat} = $flash_rep;
     };
     warn $@ if $@;
+}
+
+sub SelectWidget {
+    my $wd = shift;
+    my($X,$Y) = @_;
+    my $w = $wd->containing($X, $Y);
+    return unless $w;
+
+    my $hl = $wd->Subwidget("Tree");
+    my $c = ($hl->info("children"))[0];
+    while (defined $c and $c ne "") {
+	if ($w eq $hl->info('data', $c)) {
+	    $hl->see($c);
+	    last;
+	}
+	$c = $hl->info("next", $c);
+    }
+
+    $wd->_show_widget($w);
 }
 
 sub WidgetInfo {
