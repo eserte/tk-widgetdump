@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.18 2000/10/07 01:22:42 eserte Exp $
+# $Id: WidgetDump.pm,v 1.19 2000/12/31 02:49:30 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999, 2000 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.18 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.19 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -350,7 +350,7 @@ sub WidgetInfo {
 		      selectbackground => 'beige',
 		      foldImage => $t->Photo(-file => Tk->findINC('folder.xpm')),
 		      openImage => $t->Photo(-file => Tk->findINC('openfolder.xpm')),
-		      itemImage => $t->Photo(-file => Tk->findINC('textfile.xpm')))->pack;
+		      itemImage => $t->Photo(-file => Tk->findINC('textfile.xpm')))->pack(-fill => "both", -expand => 1);
 	     });
 	$txt->windowCreate("end", -window => $b);
     };
