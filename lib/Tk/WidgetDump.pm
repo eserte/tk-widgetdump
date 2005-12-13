@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.30 2004/10/02 16:03:41 eserte Exp $
+# $Id: WidgetDump.pm,v 1.31 2005/12/13 22:44:11 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999-2004 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.30 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.31 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -590,6 +590,14 @@ sub _edit_config {
 	$e = eval 'Tk::WidgetDump::Entry->entry($t, \$val, $set_sub)';
 	warn $@ if $@;
     }
+#XXX ja?
+#     $t->Button(-text => "Undef and close",
+# 	       -command => sub {
+# 		   $val = undef;
+# 		   $set_sub->();
+# 		   $t->destroy;
+# 	       }
+# 	      )->pack(-side => "left");
     $t->Button(-text => "Close",
 	       -command => [$t, 'destroy'],
 	      )->pack(-side => "left");
@@ -739,6 +747,14 @@ sub edit_canvas_config {
     warn $@ if $@;
     $e->focus if Tk::Exists($e);
     $t->bind("<Escape>" => [$t, 'destroy']);
+#XXX ja?
+#     $t->Button(-text => "Undef and close",
+# 	       -command => sub {
+# 		   $val = undef;
+# 		   $set_sub->();
+# 		   $t->destroy;
+# 	       }
+# 	      )->pack(-side => "left");
     $t->Button(-text => "Close", -command => [$t, "destroy"])->pack(-side => "left");
 }
 
