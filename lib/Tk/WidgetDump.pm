@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.31 2005/12/13 22:44:11 eserte Exp $
+# $Id: WidgetDump.pm,v 1.32 2007/01/08 22:20:21 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999-2004 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.31 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.32 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -314,6 +314,7 @@ sub WidgetInfo {
 
     $Tk::WidgetDump::ref2widget{$w} = $w;
 
+    $txt->insert("end", "Self:\t" . $w . "\n");
     if (defined $w->parent) {
 	$txt->insert("end", "Parent:\t" . $w->parent,
 		     ["widgetlink", "href-" . $w->parent], "\n");
