@@ -1,5 +1,15 @@
 Revision history for Perl extension WidgetDump.
 
+1.32
+	- Deparse is not available with older Data::Dumper versions
+	- documented one-liner with Tk::WidgetDump
+
+1.29
+	- new buttons "Flash widget", missing close button
+	- buttons for execute method window
+	- some refactoring
+	- Bugs section id Pod
+
 1.28
 	- show binding details
 
