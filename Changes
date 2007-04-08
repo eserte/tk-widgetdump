@@ -1,6 +1,6 @@
 Revision history for Perl extension WidgetDump.
 
-1.32
+1.33
 	- Deparse is not available with older Data::Dumper versions
 	- documented one-liner with Tk::WidgetDump
 
