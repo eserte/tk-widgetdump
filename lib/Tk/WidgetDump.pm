@@ -2,10 +2,10 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.32 2007/01/08 22:20:21 eserte Exp $
+# $Id: WidgetDump.pm,v 1.33 2007/04/08 19:34:18 eserte Exp $
 # Author: Slaven Rezic
 #
-# Copyright (C) 1999-2004 Slaven Rezic. All rights reserved.
+# Copyright (C) 1999-2007 Slaven Rezic. All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 #
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.32 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.33 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -539,7 +539,13 @@ sub show_binding_details {
     my $cb = $widget->Tk::bind($bindtag, $bind);
     $ttxt->insert("end", "Binding <$bind> for bindtag <$bindtag>:\n");
     require Data::Dumper;
-    my $txt = Data::Dumper->new([$cb],[])->Deparse(1)->Useqq(1)->Dump;
+    my $txt;
+    my $dd = Data::Dumper->new([$cb],[]);
+    if ($dd->can("Deparse")) {
+	$txt = $dd->Deparse(1)->Useqq(1)->Dump;
+    } else {
+	$txt = "Sorry, your version of Data::Dumper is not capable to deparse the CODE reference.";
+    }
     $ttxt->insert("end", $txt);
 }
 
