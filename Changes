@@ -1,5 +1,9 @@
 Revision history for Perl extension WidgetDump.
 
+1.34
+	- new "Set" button in edit config windows
+	- handle aliased config classes correctly
+
 1.33
 	- Deparse is not available with older Data::Dumper versions
 	- documented one-liner with Tk::WidgetDump
