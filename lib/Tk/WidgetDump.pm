@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.34 2007/09/15 21:27:23 eserte Exp $
+# $Id: WidgetDump.pm,v 1.35 2007/09/23 08:15:29 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 1999-2007 Slaven Rezic. All rights reserved.
@@ -17,7 +17,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.34 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.35 $ =~ /(\d+)\.(\d+)/);
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -1382,9 +1382,9 @@ Tk::WidgetDump - dump the widget hierarchie
 
 In a script:
 
-    use Tk::WidgetDump;
+    use Tk::WidgetDump; # optional
     $mw = new MainWindow;
-    $mw->WidgetDump;
+    $mw->WidgetDump; # usually before MainLoop
 
 From the command line for a quick widget option test:
 
@@ -1436,9 +1436,8 @@ itself.
 
 =item * Changing configuration values
 
-You have to hit <Return> to see the changes. The changes are not
-reflected in the configuration window, you have to hit the "Refresh"
-button.
+Changes are not reflected in the configuration window, you have to hit
+the "Refresh" button.
 
 =item * Tk::WidgetDump does not follow the conventions of a "real"
 widget (ConfiSpecs etc.)
@@ -1449,7 +1448,7 @@ widget (ConfiSpecs etc.)
 
 =head1 AUTHOR
 
-Slaven Rezic (slaven@rezic.de)
+Slaven Rezic (srezic@cpan.org)
 
 =head1 SEE ALSO
 
