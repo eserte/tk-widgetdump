@@ -1,6 +1,7 @@
 Revision history for Perl extension WidgetDump.
 
-1.36
+1.37
+	- fix for Tk::DragDrop's OO violations
 	- modernized distribution (t/*.t)
 	- switch test to Test::More
 
