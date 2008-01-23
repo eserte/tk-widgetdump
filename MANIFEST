@@ -3,5 +3,5 @@ MANIFEST
 Makefile.PL
 lib/Tk/WidgetDump.pm
 #lib/Devel/WidgetDump.pm
-test.pl
+t/widgetdump.t
 README
