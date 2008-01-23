@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: widgetdump.t,v 1.7 2008/01/23 21:42:49 eserte Exp $
+# $Id: widgetdump.t,v 1.8 2008/01/23 21:45:16 eserte Exp $
 # Author: Slaven Rezic
 #
 
@@ -22,6 +22,7 @@ my $real_tests = 1;
 plan tests => 1 + $real_tests;
 
 use Tk;
+use Tk::DragDrop;
 
 $ENV{BATCH} = 1 if !defined $ENV{BATCH};
 
@@ -47,6 +48,17 @@ foreach my $w (qw(Label Entry Button Listbox Canvas)) {
 
 $w{Canvas}->createLine(0,0,100,100);
 $w{Canvas}->createText(20,20,-text =>42);
+
+$w{Label}->DragDrop
+    (-event        => '<Shift-Control-B1-Motion>',
+     -sitetypes    => 'Local',
+     -startcommand => sub { warn "dragging" },
+    );
+
+$w{Button}->DropSite
+    (-droptypes   => 'Local',
+     -dropcommand => sub { warn "dropping" },
+    );
 
 # code references are evil:
 $top->{EvilCode} = sub { print "test " };
