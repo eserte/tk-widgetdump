@@ -1,7 +1,7 @@
 # -*- perl -*-
-use Tk::MMutil;
+use ExtUtils::MakeMaker;
 
-Tk::MMutil::TkExtMakefile(
+WriteMakefile(
     'NAME'	   => 'Tk::WidgetDump',
     'VERSION_FROM' => 'lib/Tk/WidgetDump.pm',
     'PREREQ_PM'    => { 'Tk' => 800,
@@ -12,6 +12,8 @@ Tk::MMutil::TkExtMakefile(
 			'Tk::HistEntry' => 0.33,
 			'Tk::NumEntry' => 0,
 		      },
+    'LICENSE'	   => 'perl',
+    'AUTHOR'       => 'Slaven Rezic (srezic@cpan.org)',
 );
 
 sub MY::postamble {
