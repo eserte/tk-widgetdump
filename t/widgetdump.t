@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: widgetdump.t,v 1.8 2008/01/23 21:45:16 eserte Exp $
+# $Id: widgetdump.t,v 1.9 2008/01/23 21:51:26 eserte Exp $
 # Author: Slaven Rezic
 #
 
@@ -23,6 +23,7 @@ plan tests => 1 + $real_tests;
 
 use Tk;
 use Tk::DragDrop;
+use Tk::DropSite;
 
 $ENV{BATCH} = 1 if !defined $ENV{BATCH};
 
