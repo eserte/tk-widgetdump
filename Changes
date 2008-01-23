@@ -1,5 +1,9 @@
 Revision history for Perl extension WidgetDump.
 
+1.36
+	- modernized distribution (t/*.t)
+	- switch test to Test::More
+
 1.35
 	- changed Makefile.PL to use normal ExtUtils::MakeMaker
 	- tiny documentation changes
