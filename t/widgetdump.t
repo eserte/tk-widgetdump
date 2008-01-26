@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: widgetdump.t,v 1.9 2008/01/23 21:51:26 eserte Exp $
+# $Id: widgetdump.t,v 1.10 2008/01/26 11:23:46 eserte Exp $
 # Author: Slaven Rezic
 #
 
@@ -30,7 +30,7 @@ $ENV{BATCH} = 1 if !defined $ENV{BATCH};
 use_ok('Tk::WidgetDump');
 
 my $top = eval { tkinit };
-if (!$top) {
+if (!Tk::Exists($top)) {
  SKIP: { skip("Cannot create MainWindow", $real_tests) }
     exit 0;
 }
