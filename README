@@ -28,7 +28,7 @@ INSTALLATION
 	make test
 	make install
 
-    Replace "make" with "nmake" on some Windows systems.
+    Replace "make" with "nmake" or "dmake" on Windows systems.
 
     For an interactive demonstration set the environment variable
     BATCH to 0 and rerun "make test", e.g.
