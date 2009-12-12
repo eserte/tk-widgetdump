@@ -2,10 +2,9 @@
 # -*- perl -*-
 
 #
-# $Id: WidgetDump.pm,v 1.38 2009/10/10 20:21:36 eserte Exp $
 # Author: Slaven Rezic
 #
-# Copyright (C) 1999-2008 Slaven Rezic. All rights reserved.
+# Copyright (C) 1999-2009 Slaven Rezic. All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 #
@@ -17,7 +16,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = sprintf("%d.%02d", q$Revision: 1.38 $ =~ /(\d+)\.(\d+)/);
+$VERSION = '1.38_50';
 
 package # hide from CPAN indexer
   Tk::Widget;
@@ -627,7 +626,7 @@ sub method_call {
     my $t = $wd->Toplevel(-title => "Method call");
     my $f = $t->Frame->pack(-fill => "x");
     my $eval;
-    $f->Label(-text => "Method call on $w")->pack(-side => "left");
+    $f->Label(-text => "Method call on $w ->")->pack(-side => "left");
     my $e = $f->_hist_entry({-textvariable => \$eval},
 			    {-match => 1, -dup => 0})->pack(-side => "left");
     $e->focus;
@@ -1473,6 +1472,6 @@ Slaven Rezic (srezic@cpan.org)
 
 =head1 SEE ALSO
 
-Tk(3).
+L<Tk>.
 
 =cut
