@@ -646,9 +646,13 @@ sub method_call {
 	$text->delete("1.0", "end");
 	$text->insert("end", $res);
     };
-    $e->bind("<Return>" => $doit);
+    my $close = sub {
+	$t->destroy;
+    };
+    $e->bind('<Return>' => $doit);
+    $e->bind('<Escape>' => $close);
     $f->Button(-text => "Execute!", -command => $doit)->pack(-side => "left");
-    $f->Button(-text => "Close", -command => [$t, "destroy"])->pack(-side => "left");
+    $f->Button(-text => "Close", -command => $close)->pack(-side => "left");
     $text = $t->Scrolled($wd->_more_widget_class,
 			 -scrollbars => "osoe",
 			 -font => "courier 10", # XXX do not hardcode
