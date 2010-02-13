@@ -1,6 +1,7 @@
 Revision history for Perl extension WidgetDump.
 
 	- prefer Tk::More over Tk::ROText
+	- display and edit Tk::Text tags
 
 1.37
 	- fix for Tk::DragDrop's OO violations
