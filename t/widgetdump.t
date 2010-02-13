@@ -41,9 +41,16 @@ $top->gridColumnconfigure($_, -weight => 1) for (0..1);
 my %w;
 
 my $row = 0;
-foreach my $w (qw(Label Entry Button Listbox Canvas)) {
+foreach my $w_def (['Label'],
+		   ['Entry'],
+		   ['Button'],
+		   ['Listbox', -height => 3],
+		   ['Canvas', -width => 200, -height => 50],
+		   ['Text', -width => 40, -height => 4]
+		  ) {
+    my($w,@opts) = @$w_def;
     $top->Label(-text => $w . ": ")->grid(-row => $row, -column => 0, -sticky => "nw");
-    $w{$w} = $top->$w()->grid(-row => $row, -column => 1, -sticky => "eswn");
+    $w{$w} = $top->$w(@opts)->grid(-row => $row, -column => 1, -sticky => "eswn");
     $row++;
 }
 
