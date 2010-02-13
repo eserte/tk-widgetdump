@@ -18,22 +18,21 @@ BEGIN {
     }
 }
 
-my $real_tests = 1;
-plan tests => 1 + $real_tests;
-
 use Tk;
 use Tk::DragDrop;
 use Tk::DropSite;
 
 $ENV{BATCH} = 1 if !defined $ENV{BATCH};
 
-use_ok('Tk::WidgetDump');
-
 my $top = eval { tkinit };
 if (!Tk::Exists($top)) {
- SKIP: { skip("Cannot create MainWindow", $real_tests) }
+    plan skip_all => 'Cannot create MainWindow';
     exit 0;
 }
+
+plan tests => 2;
+
+use_ok('Tk::WidgetDump');
 
 $top->gridRowconfigure($_, -weight => 1) for (0..4);
 $top->gridColumnconfigure($_, -weight => 1) for (0..1);
