@@ -1,6 +1,18 @@
 # -*- perl -*-
 use ExtUtils::MakeMaker;
 
+my $eumm_recent_enough = $ExtUtils::MakeMaker::VERSION >= 6.54;
+
+if (!$eumm_recent_enough) {
+    *MY::dist_core = sub {
+	<<'EOF';
+dist :
+	$(NOECHO) $(ECHO) "Sorry, use a newer EUMM!"
+
+EOF
+    };
+}
+
 WriteMakefile(
     'NAME'	   => 'Tk::WidgetDump',
     'VERSION_FROM' => 'lib/Tk/WidgetDump.pm',
@@ -15,6 +27,11 @@ WriteMakefile(
 		      },
     'LICENSE'	   => 'perl',
     'AUTHOR'       => 'Slaven Rezic (srezic@cpan.org)',
+    ($eumm_recent_enough
+     ? (META_MERGE => { resources => { repository => 'git://github.com/eserte/tk-widgetdump.git' },
+		      })
+     : ()
+    ),
 );
 
 sub MY::postamble {
