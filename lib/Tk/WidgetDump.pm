@@ -1,10 +1,9 @@
-#!/usr/local/bin/perl -w
 # -*- perl -*-
 
 #
 # Author: Slaven Rezic
 #
-# Copyright (C) 1999-2010 Slaven Rezic. All rights reserved.
+# Copyright (C) 1999-2011,2013 Slaven Rezic. All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 #
@@ -1476,20 +1475,7 @@ use base qw(Tk::WidgetDump::Pixels);
 package Tk::WidgetDump::Underline;
 use base qw(Tk::WidgetDump::NumEntry);
 
-
-return 1 if caller;
-
-######################################################################
-
-package main;
-
-# self-test
-my $top = MainWindow->new;
-$top->Canvas->pack->createLine(0,0,100,100);
-#$top->withdraw;
-$top->WidgetDump;
-$top->WidgetDump;
-Tk::MainLoop;
+1;
 
 __END__
 
