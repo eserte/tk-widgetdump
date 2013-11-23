@@ -1,7 +1,8 @@
 /.prove
-/Tk-WidgetDump-*.tar.gz
 /MANIFEST.bak
+/MYMETA.yml
 /Makefile
 /Makefile.old
+/Tk-WidgetDump-*.tar.gz
 /blib
 /pm_to_blib
