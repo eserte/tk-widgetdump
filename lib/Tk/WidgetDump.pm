@@ -83,6 +83,7 @@ sub WidgetDump {
 			    }, Ev('X'), Ev('Y') ]);
     }
 
+    $t;
 }
 
 sub WD_HList {
