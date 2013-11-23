@@ -2,7 +2,6 @@
 # -*- perl -*-
 
 #
-# $Id: widgetdump.t,v 1.10 2008/01/26 11:23:46 eserte Exp $
 # Author: Slaven Rezic
 #
 
@@ -30,10 +29,11 @@ if (!Tk::Exists($top)) {
     exit 0;
 }
 
-plan tests => 2;
+plan tests => 3;
 
 use_ok('Tk::WidgetDump');
 
+$top->geometry('+10+10');
 $top->gridRowconfigure($_, -weight => 1) for (0..4);
 $top->gridColumnconfigure($_, -weight => 1) for (0..1);
 
@@ -71,8 +71,10 @@ $w{Button}->DropSite
 $top->{EvilCode} = sub { print "test " };
 
 $top->update;
-eval { $top->WidgetDump; };
+my $wd = eval { $top->WidgetDump; };
 is($@, "", "WidgetDump call");
+isa_ok $wd, 'Tk::WidgetDump';
+$wd->geometry('+20+20');
 
 $top->after(1*1000, sub { $top->destroy }) if $ENV{BATCH};
 MainLoop;
