@@ -15,7 +15,7 @@ package Tk::WidgetDump;
 use vars qw($VERSION);
 use strict;
 
-$VERSION = '1.38_51';
+$VERSION = '1.39';
 
 package # hide from CPAN indexer
   Tk::Widget;
