@@ -40,6 +40,10 @@ sub MY::postamble {
     if (defined $ENV{USER} && $ENV{USER} eq 'eserte' && $^O =~ /bsd/i && -f "../../perl.release.mk") {
 	$postamble .= <<'EOF';
 
+# Test::Distribution complains over Tk::Tree and Tk::Balloon, which
+# are part of Tk
+PERL_TEST_DISTRIBUTION_OPTS=not podcover,prereq
+
 .include "../../perl.release.mk"
 .include "../../perl.git.mk"
 
