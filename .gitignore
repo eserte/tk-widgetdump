@@ -1,5 +1,6 @@
 /.prove
 /MANIFEST.bak
+/MYMETA.json
 /MYMETA.yml
 /Makefile
 /Makefile.old
